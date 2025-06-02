@@ -48,6 +48,7 @@
   import {Modal} from './js/components/modal.js'
   import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
   import {ConfigBlock} from './js/components/config_block.js'
+  import {mcu_pinouts} from './js/data/mcus.js'
   const { button } = van.tags
 
   const validate = (o)=>{
@@ -63,46 +64,6 @@
       }
     }
     return s
-  }
-
-  const mcu_pinouts = {
-    ldo_leviathan: new Pinout("LDO Leviathan", {
-      stepper: [
-        {en: 'pd7', step: 'pd4', dir: 'pd3', diag: 'pd6', uart: 'pd5'}, //stepper0
-        {en: 'pd2', step: 'pc12', dir: 'pc11', diag: 'pd1', uart: 'pd0'}, //stepper1
-        {en: 'pc10', step: 'pc9', dir: 'pc8', diag: 'pa15', uart: 'pa8'}, //stepper2
-        {en: 'pc7', step: 'pg7', dir: 'pg6', diag: 'pc6', uart: 'pg8'}, //stepper3
-        {en: 'pd13', step: 'pd10', dir: 'pd9', diag: 'pd12', uart: 'pd11'} // stepper4
-      ],
-      fan: [
-        {pwm: 'pb7', tach: 'pb8'},//fan0
-        {pwm: 'pb3', tach: 'pb4'},//fan1
-        {pwm: 'pf7', tach: 'pf6'},//fan2
-        {pwm: 'pf9', tach: 'pf8'},//fan3
-      ],
-      endstop: [
-        'pc1', //x
-        'pc2', //y
-        'pc3', //z
-        'pf1',  // z-probe
-        'pc0', // filament sensor
-      ],
-      thermistor: [
-        'pa1', //th0
-        'pa2', //th1
-        'pa0', //th2
-        'pa3', //th3
-      ],
-      neopixel: [
-        'pf10',
-      ],
-      heatbed: [
-        'pg11',
-      ],
-      hotend: [
-        'pg10',
-      ]
-    })
   }
 
   let printer = new Printer()
