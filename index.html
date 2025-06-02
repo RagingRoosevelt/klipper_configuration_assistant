@@ -1,0 +1,56 @@
+<html>
+<head>
+</head>
+<body>
+<script>
+  kinematics = {
+    cartesian: {
+      steppers: ['stepper_x', 'stepper_y', 'stepper_z'],
+    },
+    delta: {
+      steppers: ['stepper_a', 'stepper_b', 'stepper_z']
+    },
+    deltesian: {
+      steppers: ['stepper_left', 'stepper_right', 'stepper_y']
+    },
+    corexy: {
+      steppers: ['stepper_x', 'stepper_y', 'stepper_z']
+    },
+    corexz: {
+      steppers: ['stepper_x', 'stepper_y', 'stepper_z'],
+    },
+    polar: {
+      steppers: ['stepper_bed', 'stepper_arm', 'stepper_z'],
+    },
+    rotary_delta: {},
+    winch: {},
+    generic_cartesian: {},
+  }
+  stepper = () => {return {
+    name: undefined,
+    step_pin: {value: undefined, required: true},
+    dir_pin: {value: undefined, required: true},
+    enable_pin: {value: undefined, required: false},
+    rotation_distance: {value: undefined, required: true},
+    microsteps: {value: undefined, required: true},
+    full_steps_per_rotation: {value: undefined, required: false, desc: "The number of full steps for one rotation of the stepper motor. Set this to 200 for a 1.8 degree stepper motor or set to 400 for a 0.9 degree motor. The default is 200."},
+    gear_ratio: {value: undefined, required: false, desc: "The gear ratio if the stepper motor is connected to the axis via a gearbox. For example, one may specify '5:1' if a 5 to 1 gearbox is in use. If the axis has multiple gearboxes one may specify a comma separated list of gear ratios (for example, '57:11, 2:1'). If a gear_ratio is specified then rotation_distance specifies the distance the axis travels for one full rotation of the final gear. The default is to not use a gear ratio."},
+    step_pulse_duration: {value: undefined, required: false, desc: 'The minimum time between the step pulse signal edge and the following "unstep" signal edge. This is also used to set the minimum time between a step pulse and a direction change signal. The default is 0.000000100 (100ns) for TMC steppers that are configured in UART or SPI mode, and the default is 0.000002 (which is 2us) for all other steppers.'},
+    endstop_pin: {value: undefined, required: ['cartesian'], desc: 'Endstop switch detection pin. If this endstop pin is on a different mcu than the stepper motor then it enables "multi-mcu homing". This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
+    position_min: {value: undefined, required: false, default: 0, desc: 'Minimum valid distance (in mm) the user may command the stepper to move to.  The default is 0mm.'},
+    position_endstop: {value: undefined, required: ['cartesian'], desc: 'Location of the endstop (in mm). This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
+    position_max: {value: undefined, required: ['cartesian'], desc: 'Maximum valid distance (in mm) the user may command the stepper to move to. This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
+    homing_speed: {value: undefined, required: false, default: 5, desc: ''},
+    homing_retract_dist: {value: undefined, required: false, default: 5, desc: ''},
+    homing_retract_speed: {value: undefined, required: false, desc: ''},
+    second_homing_speed: {value: undefined, required: false, desc: ''},
+    homing_positive_dir: {value: undefined, required: false, desc: ''},
+  }}
+  motor_temeplate = () => {
+
+    `
+[stepper_]
+    `
+  }
+</script>
+</body>
