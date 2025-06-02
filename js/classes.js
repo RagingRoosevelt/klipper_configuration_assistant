@@ -1,0 +1,96 @@
+class Mcu {
+  constructor(name = undefined, options = {}) {
+    this.name = name === undefined ? 'mcu' : `mcu ${name}`
+    this.serial = { value: undefined, required: true, desc: 'The serial port to connect to the MCU. If unsure (or if it changes) see the "Where\'s my serial port?" section of the FAQ. This parameter must be provided when using a serial port.' }
+    this.baud = { value: undefined, required: true, default: 250000, desc: 'The baud rate to use. The default is 250000.' }
+    this.canbus_uuid = { value: undefined, required: true, desc: 'If using a device connected to a CAN bus then this sets the unique chip identifier to connect to. This value must be provided when using CAN bus for communication.' }
+    this.canbus_interface = { value: undefined, required: true, desc: 'If using a device connected to a CAN bus then this sets the CAN network interface to use. The default is "can0".' }
+    this.restart_method = { value: undefined, required: true, desc: 'This controls the mechanism the host will use to reset the micro-controller. The choices are "arduino", "cheetah", "rpi_usb", and "command". The "arduino" method (toggle DTR) is common on Arduino boards and clones. The "cheetah" method is a special method needed for some Fysetc Cheetah boards. The "rpi_usb" method is useful on Raspberry Pi boards with micro-controllers powered over USB - it briefly disables power to all USB ports to accomplish a micro-controller reset. The "command" method involves sending a Klipper command to the micro-controller so that it can reset itself. The default is "arduino" if the micro-controller communicates over a serial port, "command" otherwise.' }
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}
+
+class Printer {
+  constructor(options = {}) {
+    this.name = 'printer'
+    this.kinematics = { value: undefined, required: true, options: ['cartesian', 'delta', 'corexy'] }
+  }
+}
+class Stepper {
+  constructor(name, options = {}) {
+    this.name = name
+    this.step_pin = { value: undefined, required: true }
+    this.dir_pin = { value: undefined, required: true }
+    this.enable_pin = { value: undefined, required: false }
+    this.rotation_distance = { value: undefined, required: true }
+    this.microsteps = { value: undefined, required: true }
+    this.full_steps_per_rotation = { value: undefined, required: false, desc: "The number of full steps for one rotation of the stepper motor. Set this to 200 for a 1.8 degree stepper motor or set to 400 for a 0.9 degree motor. The default is 200." }
+    this.gear_ratio = { value: undefined, required: false, desc: 'The gear ratio if the stepper motor is connected to the axis via a gearbox. For example, one may specify "5:1" if a 5 to 1 gearbox is in use. If the axis has multiple gearboxes one may specify a comma separated list of gear ratios (for example, "57:11, 2:1"). If a gear_ratio is specified then rotation_distance specifies the distance the axis travels for one full rotation of the final gear. The default is to not use a gear ratio.' }
+    this.step_pulse_duration = { value: undefined, required: false, desc: 'The minimum time between the step pulse signal edge and the following "unstep" signal edge. This is also used to set the minimum time between a step pulse and a direction change signal. The default is 0.000000100 (100ns) for TMC steppers that are configured in UART or SPI mode, and the default is 0.000002 (which is 2us) for all other steppers.' }
+    this.endstop_pin = { value: undefined, required: ['printer.cartesian', 'printer.corexy'], desc: 'Endstop switch detection pin. If this endstop pin is on a different mcu than the stepper motor then it enables "multi-mcu homing". This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.' }
+    this.position_min = { value: undefined, required: false, default: 0, desc: 'Minimum valid distance (in mm) the user may command the stepper to move to.  The default is 0mm.' }
+    this.position_endstop = { value: undefined, required: ['printer.cartesian', 'printer.corexy'], desc: 'Location of the endstop (in mm). This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.' }
+    this.position_max = { value: undefined, required: ['printer.cartesian', 'printer.corexy'], desc: 'Maximum valid distance (in mm) the user may command the stepper to move to. This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.' }
+    this.homing_speed = { value: undefined, required: false, default: 5, desc: '' }
+    this.homing_retract_dist = { value: undefined, required: false, default: 5, desc: '' }
+    this.homing_retract_speed = { value: undefined, required: false, desc: '' }
+    this.second_homing_speed = { value: undefined, required: false, desc: '' }
+    this.homing_positive_dir = { value: undefined, required: false, desc: '' }
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}
+class Extruder {
+  constructor(name = undefined, options = {}) {
+    this.name = 'extruder'
+    this.step_pin = { value: undefined, required: true, desc: '' }
+    this.dir_pin = { value: undefined, required: true, desc: '' }
+    this.enable_pin = { value: undefined, required: true, desc: '' }
+    this.microsteps = { value: undefined, required: true, desc: '' }
+    this.rotation_distance = { value: undefined, required: true, desc: '' }
+    this.full_steps_per_rotation = { value: undefined, required: true, desc: '' }
+    this.gear_ratio = { value: undefined, required: true, desc: 'See the "stepper" section for a description of the above parameters. If none of the above parameters are specified then no stepper will be associated with the nozzle hotend (though a SYNC_EXTRUDER_MOTION command may associate one at run-time).' }
+    this.nozzle_diameter = { value: undefined, required: true, desc: 'Diameter of the nozzle orifice (in mm). This parameter must be provided.' }
+    this.filament_diameter = { value: undefined, required: true, desc: 'The nominal diameter of the raw filament (in mm) as it enters the extruder. This parameter must be provided.' }
+    this.max_extrude_cross_section = { value: undefined, required: true, desc: 'Maximum area (in mm^2) of an extrusion cross section (eg, extrusion width multiplied by layer height). This setting prevents excessive amounts of extrusion during relatively small XY moves. If a move requests an extrusion rate that would exceed this value it will cause an error to be returned. The default is = {value: undefined, required: true, desc 4.0 * nozzle_diameter^2' }
+    this.instantaneous_corner_velocity = { value: undefined, required: true, default: 1, desc: 'The maximum instantaneous velocity change (in mm/s) of the extruder during the junction of two moves. The default is 1mm/s.' }
+    this.max_extrude_only_distance = { value: undefined, required: true, default: 50, desc: 'Maximum length (in mm of raw filament) that a retraction or extrude-only move may have. If a retraction or extrude-only move requests a distance greater than this value it will cause an error to be returned. The default is 50mm.' }
+    this.max_extrude_only_velocity = { value: undefined, required: true, desc: '' }
+    this.max_extrude_only_accel = { value: undefined, required: true, desc: 'Maximum velocity (in mm/s) and acceleration (in mm/s^2) of the extruder motor for retractions and extrude-only moves. These settings do not have any impact on normal printing moves. If not specified then they are calculated to match the limit an XY printing move with a cross section of 4.0*nozzle_diameter^2 would have.' }
+    this.pressure_advance = { value: undefined, required: true, default: 0, desc: 'The amount of raw filament to push into the extruder during extruder acceleration. An equal amount of filament is retracted during deceleration. It is measured in millimeters per millimeter/second. The default is 0, which disables pressure advance.' }
+    this.pressure_advance_smooth_time = { value: undefined, required: true, default: 0.04, desc: 'A time range (in seconds) to use when calculating the average extruder velocity for pressure advance. A larger value results in smoother extruder movements. This parameter may not exceed 200ms. This setting only applies if pressure_advance is non-zero. The default is 0.040 (40 milliseconds).' }
+    this.heater_pin = { value: undefined, required: true, desc: 'PWM output pin controlling the heater. This parameter must be provided.' }
+    this.max_power = { value: undefined, required: true, default: 1, desc: 'The maximum power (expressed as a value from 0.0 to 1.0) that the heater_pin may be set to. The value 1.0 allows the pin to be set fully enabled for extended periods, while a value of 0.5 would allow the pin to be enabled for no more than half the time. This setting may be used to limit the total power output (over extended periods) to the heater. The default is 1.0.' }
+    this.sensor_type = { value: undefined, required: true, desc: 'Type of sensor - common thermistors are "EPCOS 100K B57560G104F", "ATC Semitec 104GT-2", "ATC Semitec 104NT-4-R025H42G", "Generic 3950","Honeywell 100K 135-104LAG-J01", "NTC 100K MGB18-104F39050L32", "SliceEngineering 450", and "TDK NTCG104LH104JT1". See the "Temperature sensors" section for other sensors. This parameter must be provided.' }
+    this.sensor_pin = { value: undefined, required: true, desc: 'Analog input pin connected to the sensor. This parameter must be provided.' }
+    this.pullup_resistor = { value: undefined, required: true, default: 4700, desc: 'The resistance (in ohms) of the pullup attached to the thermistor. This parameter is only valid when the sensor is a thermistor. The default is 4700 ohms.' }
+    this.smooth_time = { value: undefined, required: true, default: 1, desc: 'A time value (in seconds) over which temperature measurements will be smoothed to reduce the impact of measurement noise. The default is 1 seconds.' }
+    this.control = { value: undefined, required: true, desc: 'Control algorithm (either pid or watermark). This parameter must be provided.' }
+    this.pid_Kp = { value: undefined, required: true, desc: 'proportional (pid_Kp) term in PID' }
+    this.pid_Ki = { value: undefined, required: true, desc: 'integral (pid_Ki) term in PID' }
+    this.pid_Kd = { value: undefined, required: true, desc: 'The proportional (pid_Kp), integral (pid_Ki), and derivative (pid_Kd) settings for the PID feedback control system. Klipper evaluates the PID settings with the following general formula: heater_pwm = (Kp*error + Ki*integral(error) - Kd*derivative(error)) / 255 Where "error" is "requested_temperature - measured_temperature" and "heater_pwm" is the requested heating rate with 0.0 being full off and 1.0 being full on. Consider using the PID_CALIBRATE command to obtain these parameters. The pid_Kp, pid_Ki, and pid_Kd parameters must be provided for PID heaters.' }
+    this.max_delta = { value: undefined, required: true, default: 2, desc: 'On "watermark" controlled heaters this is the number of degrees in Celsius above the target temperature before disabling the heater as well as the number of degrees below the target before re-enabling the heater. The default is 2 degrees Celsius.' }
+    this.pwm_cycle_time = { value: undefined, required: true, default: 0.1, desc: 'Time in seconds for each software PWM cycle of the heater. It is not recommended to set this unless there is an electrical requirement to switch the heater faster than 10 times a second. The default is 0.100 seconds.' }
+    this.min_extrude_temp = { value: undefined, required: true, default: 170, desc: 'The minimum temperature (in Celsius) at which extruder move commands may be issued. The default is 170 Celsius.' }
+    this.min_temp = { value: undefined, required: true, desc: '' }
+    this.max_temp = { value: undefined, required: true, desc: 'The maximum range of valid temperatures (in Celsius) that the heater must remain within. This controls a safety feature implemented in the micro-controller code - should the measured temperature ever fall outside this range then the micro-controller will go into a shutdown state. This check can help detect some heater and sensor hardware failures. Set this range just wide enough so that reasonable temperatures do not result in an error. These parameters must be provided.' }
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+
+}
+class HeaterBed {
+
+}
+
+export {Mcu, Printer, Stepper, Extruder, HeaterBed}

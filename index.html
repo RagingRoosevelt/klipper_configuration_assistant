@@ -1,56 +1,77 @@
 <html>
 <head>
+  <link rel="stylesheet" href="css/pico.classless.amber.css">
 </head>
 <body>
-<script>
-  kinematics = {
-    cartesian: {
-      steppers: ['stepper_x', 'stepper_y', 'stepper_z'],
-    },
-    delta: {
-      steppers: ['stepper_a', 'stepper_b', 'stepper_z']
-    },
-    deltesian: {
-      steppers: ['stepper_left', 'stepper_right', 'stepper_y']
-    },
-    corexy: {
-      steppers: ['stepper_x', 'stepper_y', 'stepper_z']
-    },
-    corexz: {
-      steppers: ['stepper_x', 'stepper_y', 'stepper_z'],
-    },
-    polar: {
-      steppers: ['stepper_bed', 'stepper_arm', 'stepper_z'],
-    },
-    rotary_delta: {},
-    winch: {},
-    generic_cartesian: {},
-  }
-  stepper = () => {return {
-    name: undefined,
-    step_pin: {value: undefined, required: true},
-    dir_pin: {value: undefined, required: true},
-    enable_pin: {value: undefined, required: false},
-    rotation_distance: {value: undefined, required: true},
-    microsteps: {value: undefined, required: true},
-    full_steps_per_rotation: {value: undefined, required: false, desc: "The number of full steps for one rotation of the stepper motor. Set this to 200 for a 1.8 degree stepper motor or set to 400 for a 0.9 degree motor. The default is 200."},
-    gear_ratio: {value: undefined, required: false, desc: "The gear ratio if the stepper motor is connected to the axis via a gearbox. For example, one may specify '5:1' if a 5 to 1 gearbox is in use. If the axis has multiple gearboxes one may specify a comma separated list of gear ratios (for example, '57:11, 2:1'). If a gear_ratio is specified then rotation_distance specifies the distance the axis travels for one full rotation of the final gear. The default is to not use a gear ratio."},
-    step_pulse_duration: {value: undefined, required: false, desc: 'The minimum time between the step pulse signal edge and the following "unstep" signal edge. This is also used to set the minimum time between a step pulse and a direction change signal. The default is 0.000000100 (100ns) for TMC steppers that are configured in UART or SPI mode, and the default is 0.000002 (which is 2us) for all other steppers.'},
-    endstop_pin: {value: undefined, required: ['cartesian'], desc: 'Endstop switch detection pin. If this endstop pin is on a different mcu than the stepper motor then it enables "multi-mcu homing". This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
-    position_min: {value: undefined, required: false, default: 0, desc: 'Minimum valid distance (in mm) the user may command the stepper to move to.  The default is 0mm.'},
-    position_endstop: {value: undefined, required: ['cartesian'], desc: 'Location of the endstop (in mm). This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
-    position_max: {value: undefined, required: ['cartesian'], desc: 'Maximum valid distance (in mm) the user may command the stepper to move to. This parameter must be provided for the X, Y, and Z steppers on cartesian style printers.'},
-    homing_speed: {value: undefined, required: false, default: 5, desc: ''},
-    homing_retract_dist: {value: undefined, required: false, default: 5, desc: ''},
-    homing_retract_speed: {value: undefined, required: false, desc: ''},
-    second_homing_speed: {value: undefined, required: false, desc: ''},
-    homing_positive_dir: {value: undefined, required: false, desc: ''},
-  }}
-  motor_temeplate = () => {
 
-    `
-[stepper_]
-    `
+  <details open>
+    <summary><code>printer.cfg</code></summary>
+    <button data-idx="1">+</button>
+  </details>
+  <dialog id="add_edit_block">
+    <select id="block_type">
+      <option>Mcu</option>
+      <option>Printer</option>
+      <option>Stepper</option>
+      <option>Extruder</option>
+    </select>
+  </dialog>
+
+
+<script type="module">
+  const all = document.querySelectorAll.bind(document)
+  const one = document.querySelector.bind(document)
+  const add_edit_block = one("#add_edit_block")
+
+  import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.5.3.min.js"
+  import {Mcu, Printer, Stepper, Extruder, HeaterBed} from '/js/classes.js'
+  import {c_Mcu} from '/js/components.js'
+  import {BlockDialog} from '/js/components/block_dialog.js'
+
+  const validate = (o)=>{
+    for (const p of Object.keys(o)) {
+      if (o[p].value === undefined && o[p].required === true) return false
+    }
   }
+  const config_block =(o)=>{
+    let s = `[${o.name}]`
+    for (const p of Object.keys(o)) {
+      if (o[p].value !== undefined) {
+        s = `${s}\n  ${p}: ${o[p].value}`
+      }
+    }
+    return s
+  }
+
+  let config = {
+
+  }
+
+
+
+  function add_section(e) {
+    const idx = e.target.dataset.idx
+    console.log(idx)
+    add_edit_block.showModal();
+  }
+
+  const block_dialog = BlockDialog()
+
+  console.log(block_dialog)
+
+  all("button").forEach(element => {
+    element.addEventListener("click", ()=>block_dialog.showModal())
+  });
+
+
+  van.add(document.body, c_Mcu())
+  van.add(document.body, block_dialog.element)
+
+  let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
+  let mcu = new Mcu('rp2040')
+  console.log(validate(stepper_x)?"valid":"not valid")
+  console.log(config_block(stepper_x))
+  console.log(validate(mcu)?"valid":"not valid")
+  console.log(config_block(mcu))
 </script>
 </body>
