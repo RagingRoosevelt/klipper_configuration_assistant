@@ -3,7 +3,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Klipper Configuration Assistant</title>
-  <link rel="icon" sizes="192x192" href="/path/to/icon.png">
   <link rel="stylesheet" href="css/pico.classless.amber.css">
   <style>
     input:invalid:required {
@@ -46,6 +45,7 @@
 
   import van from "./js/frameworks/van-1.5.5.js"
   import {Pinout} from "./js/classes/pinout.js"
+  import {Modal} from './js/components/modal.js'
   import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
   import {ConfigBlock} from './js/components/config_block.js'
   const { button } = van.tags
@@ -122,12 +122,22 @@
     stepper_x
   ]
 
+  const show_modal = van.state(false)
+  const modal_info = van.state({title: "", body: ""})
 
+  van.add(document.body, Modal(show_modal, modal_info))
+
+  // van.add(one("#printer-cfg"), button({onclick: ()=>{
+  //   const config_block_str = config_blocks.map(b=>config_block(b)).join("\n")
+  //   navigator.clipboard.writeText(config_block_str)
+  //   console.log(config_block_str)
+  // }}, "Copy"))
   van.add(one("#printer-cfg"), button({onclick: ()=>{
-    const config_block_str = config_blocks.map(b=>config_block(b)).join("\n")
-    navigator.clipboard.writeText(config_block_str)
-    console.log(config_block_str)
-  }}, "Copy"))
+    show_modal.val = true
+    const code_block_str = config_blocks.map(b=>config_block(b)).join("\n")
+    console.log(code_block_str)
+    modal_info.val = {title: "config file", body: code_block_str}
+  }}, "Show cfg file"))
 
   config_blocks.forEach(
     b=>van.add(one("#printer-cfg"), ConfigBlock(b, mcu_pinouts.ldo_leviathan))

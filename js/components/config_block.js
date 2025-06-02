@@ -16,6 +16,7 @@ export const ConfigBlock = (o, pinouts={}) => {
           value: null, 
           onchange: (e) => o[k].value.val = e.target.value
         }, 
+        option(),
         o[k].options.map(v=>option({"data-value": v},v))
       )
     } else if (o[k].pin_type) {
@@ -35,6 +36,7 @@ export const ConfigBlock = (o, pinouts={}) => {
           value: null,
           onchange: (e) => o[k].value.val = e.target.value
         }, 
+        option(),
         select_options
       )
     } else  {
