@@ -10,7 +10,14 @@ export const ConfigBlock = (o, pinouts={}) => {
     const tooltip = o[k].desc?{"data-tooltip": o[k].desc}:{}
     let input_elem;
     if (o[k].options) {
-      input_elem = select({required: o[k].required, value: null}, o[k].options.map(v=>option(v)))
+      input_elem = select(
+        {
+          required: o[k].required, 
+          value: null, 
+          onchange: (e) => o[k].value.val = e.target.value
+        }, 
+        o[k].options.map(v=>option({"data-value": v},v))
+      )
     } else if (o[k].pin_type) {
       const pin_type_key = o[k].pin_type.split(".")[0]
       let select_options;
@@ -22,7 +29,14 @@ export const ConfigBlock = (o, pinouts={}) => {
         select_options = pinouts[pin_type_key].map(v=>option(v))
       }      
 
-      input_elem = select({required: o[k].required, value: null}, select_options)
+      input_elem = select(
+        {
+          required: o[k].required, 
+          value: null,
+          onchange: (e) => o[k].value.val = e.target.value
+        }, 
+        select_options
+      )
     } else  {
       input_elem = input({
         id: `${o.name.val.replace(" ","_")}-${k}`,
