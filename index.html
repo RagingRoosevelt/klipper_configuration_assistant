@@ -3,10 +3,22 @@
   <link rel="stylesheet" href="css/pico.classless.amber.css">
 </head>
 <body>
-
-  <details open>
-    <summary><code>printer.cfg</code></summary>
-    <button data-idx="1">+</button>
+  <style>
+    input:invalid:required {
+      background-color: oklch(0.9235 0.0444 23.29);
+    }
+    form {
+      margin: 1rem 10ch;
+    }
+    [data-tooltip]:before {
+      max-width: min(450px, 80vw);
+      width: max-content;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+  </style>
+  <details open id="printer-cfg" style="border: 3px solid black; margin: 10px; padding: 10px; border-radius: 10px;">
+    <summary><code style="color: var(--pico-color);">printer.cfg</code></summary>
   </details>
   <dialog id="add_edit_block">
     <select id="block_type">
@@ -17,16 +29,16 @@
     </select>
   </dialog>
 
-
 <script type="module">
   const all = document.querySelectorAll.bind(document)
   const one = document.querySelector.bind(document)
   const add_edit_block = one("#add_edit_block")
 
-  import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.5.3.min.js"
-  import {Mcu, Printer, Stepper, Extruder, HeaterBed} from '/js/classes.js'
-  import {c_Mcu} from '/js/components.js'
-  import {BlockDialog} from '/js/components/block_dialog.js'
+  import van from "/js/frameworks/van-1.5.5.js"
+  import {Pinout} from "/js/classes/pinout.js"
+  import {Mcu, Printer, Stepper, Extruder, HeaterBed} from '/js/classes/config_blocks.js'
+  import {ConfigBlock} from '/js/components/config_block.js'
+  const { button } = van.tags
 
   const validate = (o)=>{
     for (const p of Object.keys(o)) {
@@ -34,20 +46,58 @@
     }
   }
   const config_block =(o)=>{
-    let s = `[${o.name}]`
-    for (const p of Object.keys(o)) {
-      if (o[p].value !== undefined) {
-        s = `${s}\n  ${p}: ${o[p].value}`
+    let s = `[${o.name.val}]`
+    for (const p of Object.keys(o).filter(k=>k!=="name")) {
+      if (o[p].value.val !== undefined) {
+        s = `${s}\n  ${p}: ${o[p].value.val}`
       }
     }
     return s
   }
 
-  let config = {
-
+  const mcu_pinouts = {
+    ldo_leviathan: new Pinout("LDO Leviathan", {
+      stepper: [
+        {en: 'pd7', step: 'pd4', dir: 'pd3', diag: 'pd6', uart: 'pd5'}, //stepper0
+        {en: 'pd2', step: 'pc12', dir: 'pc11', diag: 'pd1', uart: 'pd0'}, //stepper1
+        {en: 'pc10', step: 'pc9', dir: 'pc8', diag: 'pa15', uart: 'pa8'}, //stepper2
+        {en: 'pc7', step: 'pg7', dir: 'pg6', diag: 'pc6', uart: 'pg8'}, //stepper3
+        {en: 'pd13', step: 'pd10', dir: 'pd9', diag: 'pd12', uart: 'pd11'} // stepper4
+      ],
+      fan: [
+        {pwm: 'pb7', tach: 'pb8'},//fan0
+        {pwm: 'pb3', tach: 'pb4'},//fan1
+        {pwm: 'pf7', tach: 'pf6'},//fan2
+        {pwm: 'pf9', tach: 'pf8'},//fan3
+      ],
+      endstop: [
+        'pc1', //x
+        'pc2', //y
+        'pc3', //z
+        'pf1',  // z-probe
+        'pc0', // filament sensor
+      ],
+      thermistor: [
+        'pa1', //th0
+        'pa2', //th1
+        'pa0', //th2
+        'pa3', //th3
+      ],
+      neopixel: [
+        'pf10',
+      ],
+      heatbed: [
+        'pg11',
+      ],
+      hotend: [
+        'pg10',
+      ]
+    })
   }
 
-
+  let printer = new Printer()
+  let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
+  let mcu = new Mcu('rp2040')
 
   function add_section(e) {
     const idx = e.target.dataset.idx
@@ -55,23 +105,26 @@
     add_edit_block.showModal();
   }
 
-  const block_dialog = BlockDialog()
 
-  console.log(block_dialog)
+  let config_blocks = [
+    printer,
+    mcu,
+    stepper_x
+  ]
 
-  all("button").forEach(element => {
-    element.addEventListener("click", ()=>block_dialog.showModal())
-  });
 
+  van.add(one("#printer-cfg"), button({onclick: ()=>{
+    const config_block_str = config_blocks.map(b=>config_block(b)).join("\n")
+    navigator.clipboard.writeText(config_block_str)
+    console.log(config_block_str)
+  }}, "Copy"))
 
-  van.add(document.body, c_Mcu())
-  van.add(document.body, block_dialog.element)
+  config_blocks.forEach(
+    b=>van.add(one("#printer-cfg"), ConfigBlock(b, mcu_pinouts.ldo_leviathan))
+  )
+  // van.add(document.body, ConfigBlock(mcu, mcu_pinouts.ldo_leviathan))
+  // van.add(document.body, ConfigBlock(stepper_x, mcu_pinouts.ldo_leviathan))
 
-  let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
-  let mcu = new Mcu('rp2040')
-  console.log(validate(stepper_x)?"valid":"not valid")
-  console.log(config_block(stepper_x))
-  console.log(validate(mcu)?"valid":"not valid")
   console.log(config_block(mcu))
 </script>
 </body>
