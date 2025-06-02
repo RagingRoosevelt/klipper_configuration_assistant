@@ -1,4 +1,4 @@
-import van from "/js/frameworks/van-1.5.5.js"
+import van from "../frameworks/van-1.5.5.js"
 
 class Mcu {
   constructor(name = undefined, options = {}) {
