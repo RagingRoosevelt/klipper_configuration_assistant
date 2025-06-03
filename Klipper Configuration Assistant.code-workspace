@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"[javascript],[html],[json]": {
+			"editor.tabSize": 2
+		}
+	}
+}

@@ -6,6 +6,7 @@ export class Pinout {
     options={}
   ) {
     this.name = name
+    this.shortname = shortname
     this.source = source
     this.stepper = options.stepper || []
     this.fan = options.fan || []

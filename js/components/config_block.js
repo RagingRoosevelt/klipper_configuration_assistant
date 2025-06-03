@@ -1,10 +1,10 @@
 import van from "../frameworks/van-1.5.5.js"
-const { button, details, div, form, input, label, option, section, select, span, summary } = van.tags
+const { details, div, form, input, label, option, select, summary } = van.tags
 
 
 // todo: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 export const ConfigBlock = (o, pinouts={}) => {
-  console.log(pinouts['stepper'])
+  pinouts = pinouts.ldo_leviathan
   let properties = []
   for (const k of Object.keys(o).filter((key)=>key!=="name")) {
     const tooltip = o[k].desc?{"data-tooltip": o[k].desc}:{}
@@ -64,33 +64,11 @@ export const ConfigBlock = (o, pinouts={}) => {
 
 
 
-  let name_input = []
-  if (o.name.val.split(" ")[0] === "mcu") {
-    name_input.push(
-      div(
-        label({style: "display: inline-block; width: 20ch;", "data-tooltip": "Leave blank for primary MCU"}, "MCU name"),
-        input({
-          style: "width: auto; height: calc(1rem * var(--pico-line-height) + var(--pico-border-width) * 2);",
-          value: o.name.val.split(" ")[1],
-          oninput: (e)=>o.name.val = (
-            e.target.value!==""?`${o.name.val.split(" ")[0]} ${e.target.value}`:o.name.val.split(" ")[0]
-          )
-        })
-      )
-    )
-  }
 
 
-  return details(
-    {
-      open: true,
-      style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;"
-    },
-    summary(van.derive(() => `[${o.name.val}]`)),
-    ...name_input,
-    form(
-      {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
-      ...properties
-    )
+
+  return     form(
+    {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
+    ...properties
   )
 }

@@ -48,6 +48,9 @@
   import {Modal} from './js/components/modal.js'
   import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
   import {ConfigBlock} from './js/components/config_block.js'
+  import {ConfigBlockMcu} from './js/components/config_block_mcu.js'
+  import {ConfigBlockStepper} from './js/components/config_block_stepper.js'
+  import {ConfigBlockPrinter} from './js/components/config_block_printer.js'
   import {mcu_pinouts} from './js/data/mcus.js'
   const { button } = van.tags
 
@@ -101,7 +104,34 @@
   }}, "Show cfg file"))
 
   config_blocks.forEach(
-    b=>van.add(one("#printer-cfg"), ConfigBlock(b, mcu_pinouts.ldo_leviathan))
+    b=>van.add(
+      one("#printer-cfg"),
+      b.name.val.startsWith("mcu")?ConfigBlockMcu(undefined, b,        Object.keys(mcu_pinouts)
+          .filter(key => ["ldo_leviathan"].includes(key))
+          .reduce((obj, key) => {
+            obj[key] = mcu_pinouts[key];
+            return obj;
+          }, {})):
+          b.name.val.startsWith("stepper")?ConfigBlockStepper(undefined, b,        Object.keys(mcu_pinouts)
+          .filter(key => ["ldo_leviathan"].includes(key))
+          .reduce((obj, key) => {
+            obj[key] = mcu_pinouts[key];
+            return obj;
+          }, {})):b.name.val.startsWith("printer")?ConfigBlockPrinter(undefined, b,        Object.keys(mcu_pinouts)
+          .filter(key => ["ldo_leviathan"].includes(key))
+          .reduce((obj, key) => {
+            obj[key] = mcu_pinouts[key];
+            return obj;
+          }, {})):ConfigBlock(
+        b,
+        Object.keys(mcu_pinouts)
+          .filter(key => ["ldo_leviathan"].includes(key))
+          .reduce((obj, key) => {
+            obj[key] = mcu_pinouts[key];
+            return obj;
+          }, {})
+      )
+    )
   )
   // van.add(document.body, ConfigBlock(mcu, mcu_pinouts.ldo_leviathan))
   // van.add(document.body, ConfigBlock(stepper_x, mcu_pinouts.ldo_leviathan))
