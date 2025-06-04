@@ -5,8 +5,6 @@
     padding: 10px;
     border-radius: 10px;
     position: fixed;
-    right: 10px;
-    bottom: 10px;
     color: #000;
     box-shadow: 3px 3px 10px hsl(0 0% 0% / 0.6);
     &.warning {
@@ -17,5 +15,21 @@
     }
     &.info {
         background-color: hsl(50 100% 65%);
+    }
+    &.top-right {
+        right: 10px;
+        top: 10px;
+    }
+    &.top-left {
+        top: 10px;
+        left: 10px;
+    }
+    &.bottom-left {
+        left: 10px;
+        bottom: 10px;
+    }
+    &.bottom-right {
+        right: 10px;
+        bottom: 10px;
     }
 }

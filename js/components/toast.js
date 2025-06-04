@@ -7,6 +7,7 @@ export const Toast = (toast_info) => {
   let message_queue = []
   const message_to_show = van.state({})
   const is_visible = van.state(false)
+  const toast_location = van.state("top-right")
 
   const clear_toast = () => {
     is_visible.val = false
@@ -18,7 +19,11 @@ export const Toast = (toast_info) => {
   const show_message = () => {
     if (is_visible.val === false && message_queue.length > 0) {
       const message = message_queue.pop()
-      message_to_show.val = {message: message.message, type: message.type}
+      message_to_show.val = {
+        message: message.message, 
+        type: message.type
+      }
+      toast_location.val = message.location?message.location:'top-right'
       is_visible.val = true
       toast_timeout_countdown = setTimeout(clear_toast, message.timeout?message.timeout:toast_timeout_duration)
     }
@@ -29,7 +34,8 @@ export const Toast = (toast_info) => {
       message_queue.push({
         message: toast_info.val.message, 
         type: toast_info.val.type,
-        ...(toast_info.val.timeout?{timeout: toast_info.val.timeout}:{})
+        ...(toast_info.val.timeout?{timeout: toast_info.val.timeout}:{}),
+        ...(toast_info.val.location?{location: toast_info.val.location}:{}),
       })
       console.log(message_queue)
       show_message()
@@ -41,7 +47,8 @@ export const Toast = (toast_info) => {
       class: van.derive(()=>[
         "toast", 
         is_visible.val?"":"hidden", 
-        `${message_to_show.val.type}`
+        `${message_to_show.val.type}`,
+        `${toast_location.val}`,
       ].join(" ")),
     },
     span(van.derive(()=>`${message_to_show.val.message}`)),
