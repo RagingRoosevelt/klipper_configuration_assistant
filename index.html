@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Klipper Configuration Assistant</title>
   <link rel="stylesheet" href="css/pico.classless.amber.css">
+  <link rel="stylesheet" href="css/site.css">
   <style>
     input:invalid:required {
       background-color: oklch(0.9235 0.0444 23.29);
@@ -77,7 +78,7 @@
   van.add(document.body, button({onclick: ()=>{
     toast_info.val = {
       message: makeid(10),
-      type: toast_info.val.type==="warning"?"info":toast_info.val.type==="info"?"warning":"error"
+      type: toast_info.val.type==="warning"?"info":toast_info.val.type==="info"?"error":"warning"
     }
   }}, "Create toast"))
  
