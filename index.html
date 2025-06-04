@@ -17,6 +17,9 @@
       white-space: normal;
       word-wrap: break-word;
     }
+    .hidden {
+      visibility: hidden;
+    }
   </style>
 </head>
 <body>
@@ -47,12 +50,38 @@
   import {Pinout} from "./js/classes/pinout.js"
   import {Modal} from './js/components/modal.js'
   import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
+  import {Toast} from './js/components/toast.js'
   import {ConfigBlock} from './js/components/config_block.js'
   import {ConfigBlockMcu} from './js/components/config_block_mcu.js'
   import {ConfigBlockStepper} from './js/components/config_block_stepper.js'
   import {ConfigBlockPrinter} from './js/components/config_block_printer.js'
   import {mcu_pinouts} from './js/data/mcus.js'
   const { button } = van.tags
+
+  const toast_message = van.state(undefined)
+  const toast_type = van.state(undefined)
+  const toast_info = van.state({message: undefined, type: undefined})
+  van.add(document.body, Toast(toast_info))
+  console.log(toast_message)
+
+
+  function makeid(length) {
+      var result           = '';
+      var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      var charactersLength = characters.length;
+      for ( var i = 0; i < length; i++ ) {
+          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+      return result;
+  }
+  van.add(document.body, button({onclick: ()=>{
+    toast_info.val = {
+      message: makeid(10),
+      type: toast_info.val.type==="warning"?"info":toast_info.val.type==="info"?"warning":"error"
+    }
+  }}, "Create toast"))
+ 
+  
 
   const validate = (o)=>{
     for (const p of Object.keys(o)) {
@@ -89,7 +118,7 @@
   const show_modal = van.state(false)
   const modal_info = van.state({title: "", body: ""})
 
-  van.add(document.body, Modal(show_modal, modal_info))
+  van.add(document.body, Modal(show_modal, modal_info, toast_info))
 
   // van.add(one("#printer-cfg"), button({onclick: ()=>{
   //   const config_block_str = config_blocks.map(b=>config_block(b)).join("\n")
