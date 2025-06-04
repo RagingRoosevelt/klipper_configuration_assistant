@@ -2,7 +2,7 @@ import van from "../frameworks/van-1.5.5.js"
 const { button, code, dialog, div, modal, span } = van.tags
 
 export const Toast = (toast_info) => {
-  const toast_timeout_duration = 150000
+  const toast_timeout_duration = 1500
   let toast_timeout_countdown = undefined
   let message_queue = []
   const message_to_show = van.state({})
