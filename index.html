@@ -48,6 +48,7 @@
   const add_edit_block = one("#add_edit_block")
 
   import van from "./js/frameworks/van-1.5.5.js"
+  import * as BlockDefs from "./js/classes/config_blocks.js"
   import {Pinout} from "./js/classes/pinout.js"
   import {Modal} from './js/components/modal.js'
   import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
@@ -56,6 +57,12 @@
   import {ConfigBlockMcu} from './js/components/config_block_mcu.js'
   import {ConfigBlockStepper} from './js/components/config_block_stepper.js'
   import {ConfigBlockPrinter} from './js/components/config_block_printer.js'
+  import {ConfigBlockBedLevel} from './js/components/config_block_bed_level.js'
+  import {ConfigBlockBedTilt} from './js/components/config_block_bed_tilt.js'
+  import {ConfigBlockBedMesh} from './js/components/config_block_bed_mesh.js'
+  import {ConfigBlockBedScrews} from './js/components/config_block_bed_screws.js'
+  import {ConfigBlockScrewsTiltAdjust} from './js/components/config_block_screws_tilt_adjust.js'
+  import {ConfigBlockZTilt} from './js/components/config_block_z_tilt.js'
   import {mcu_pinouts} from './js/data/mcus.js'
   const { button } = van.tags
 
@@ -63,26 +70,26 @@
   const toast_type = van.state(undefined)
   const toast_info = van.state({message: undefined, type: undefined})
   van.add(document.body, Toast(toast_info))
-  console.log(toast_message)
+  // console.log(toast_message)
 
 
-  function makeid(length) {
-      var result           = '';
-      var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      var charactersLength = characters.length;
-      for ( var i = 0; i < length; i++ ) {
-          result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      }
-      return result;
-  }
-  van.add(document.body, button({onclick: ()=>{
-    toast_info.val = {
-      message: makeid(10),
-      type: toast_info.val.type==="warning"?"info":toast_info.val.type==="info"?"error":"warning"
-    }
-  }}, "Create toast"))
- 
-  
+  // function makeid(length) {
+  //     var result           = '';
+  //     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  //     var charactersLength = characters.length;
+  //     for ( var i = 0; i < length; i++ ) {
+  //         result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  //     }
+  //     return result;
+  // }
+  // van.add(document.body, button({onclick: ()=>{
+  //   toast_info.val = {
+  //     message: Array(15).fill(0).map(()=>makeid(10)).join(" "),
+  //     type: toast_info.val.type==="warning"?"info":toast_info.val.type==="info"?"error":"warning"
+  //   }
+  // }}, "Create toast"))
+
+
 
   const validate = (o)=>{
     for (const p of Object.keys(o)) {
@@ -99,9 +106,9 @@
     return s
   }
 
-  let printer = new Printer()
-  let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
-  let mcu = new Mcu('rp2040')
+  // let printer = new Printer()
+  // let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
+  // let mcu = new Mcu('rp2040')
 
   function add_section(e) {
     const idx = e.target.dataset.idx
@@ -110,11 +117,11 @@
   }
 
 
-  let config_blocks = [
-    printer,
-    mcu,
-    stepper_x
-  ]
+  // let config_blocks = [
+  //   printer,
+  //   mcu,
+  //   stepper_x
+  // ]
 
   const show_modal = van.state(false)
   const modal_info = van.state({title: "", body: ""})
@@ -126,46 +133,106 @@
   //   navigator.clipboard.writeText(config_block_str)
   //   console.log(config_block_str)
   // }}, "Copy"))
+
+
   van.add(one("#printer-cfg"), button({onclick: ()=>{
     show_modal.val = true
-    const code_block_str = config_blocks.map(b=>config_block(b)).join("\n")
-    console.log(code_block_str)
+    // const code_block_str = config_blocks.map(b=>config_block(b)).join("\n")
+    const code_block_str = ""
     modal_info.val = {title: "config file", body: code_block_str}
   }}, "Show cfg file"))
 
-  config_blocks.forEach(
-    b=>van.add(
-      one("#printer-cfg"),
-      b.name.val.startsWith("mcu")?ConfigBlockMcu(undefined, b,        Object.keys(mcu_pinouts)
-          .filter(key => ["ldo_leviathan"].includes(key))
-          .reduce((obj, key) => {
-            obj[key] = mcu_pinouts[key];
-            return obj;
-          }, {})):
-          b.name.val.startsWith("stepper")?ConfigBlockStepper(undefined, b,        Object.keys(mcu_pinouts)
-          .filter(key => ["ldo_leviathan"].includes(key))
-          .reduce((obj, key) => {
-            obj[key] = mcu_pinouts[key];
-            return obj;
-          }, {})):b.name.val.startsWith("printer")?ConfigBlockPrinter(undefined, b,        Object.keys(mcu_pinouts)
-          .filter(key => ["ldo_leviathan"].includes(key))
-          .reduce((obj, key) => {
-            obj[key] = mcu_pinouts[key];
-            return obj;
-          }, {})):ConfigBlock(
-        b,
-        Object.keys(mcu_pinouts)
-          .filter(key => ["ldo_leviathan"].includes(key))
-          .reduce((obj, key) => {
-            obj[key] = mcu_pinouts[key];
-            return obj;
-          }, {})
-      )
-    )
-  )
+
+  // config_blocks.forEach(
+  //   b=>van.add(
+  //     one("#printer-cfg"),
+  //     b.name.val.startsWith("mcu")?ConfigBlockMcu(undefined, b,        Object.keys(mcu_pinouts)
+  //         .filter(key => ["ldo_leviathan"].includes(key))
+  //         .reduce((obj, key) => {
+  //           obj[key] = mcu_pinouts[key];
+  //           return obj;
+  //         }, {})):
+  //         b.name.val.startsWith("stepper")?ConfigBlockStepper(undefined, b,        Object.keys(mcu_pinouts)
+  //         .filter(key => ["ldo_leviathan"].includes(key))
+  //         .reduce((obj, key) => {
+  //           obj[key] = mcu_pinouts[key];
+  //           return obj;
+  //         }, {})):b.name.val.startsWith("printer")?ConfigBlockPrinter(undefined, b,        Object.keys(mcu_pinouts)
+  //         .filter(key => ["ldo_leviathan"].includes(key))
+  //         .reduce((obj, key) => {
+  //           obj[key] = mcu_pinouts[key];
+  //           return obj;
+  //         }, {})):ConfigBlock(
+  //       b,
+  //       Object.keys(mcu_pinouts)
+  //         .filter(key => ["ldo_leviathan"].includes(key))
+  //         .reduce((obj, key) => {
+  //           obj[key] = mcu_pinouts[key];
+  //           return obj;
+  //         }, {})
+  //     )
+  //   )
+  // )
+  // van.add(
+  //   one("#printer-cfg"),
+  //   ConfigBlockBedLevel(
+  //     {
+  //       type: van.state(""),
+  //       block: van.state({})
+  //     },
+  //     {
+  //       pinouts: Object.keys(mcu_pinouts)
+  //         .filter(key => ["ldo_leviathan"].includes(key))
+  //         .reduce((obj, key) => {
+  //           obj[key] = mcu_pinouts[key];
+  //           return obj;
+  //         }, {})
+  //     },
+  //   )
+  // )
+  // console.log(new BlockDefs.BedTilt())
   // van.add(document.body, ConfigBlock(mcu, mcu_pinouts.ldo_leviathan))
   // van.add(document.body, ConfigBlock(stepper_x, mcu_pinouts.ldo_leviathan))
 
-  console.log(config_block(mcu))
+  for (const [Block, Elem] of [
+      [BlockDefs.Printer, ConfigBlockPrinter],
+      [BlockDefs.Mcu, ConfigBlockMcu],
+      [BlockDefs.Stepper, ConfigBlockStepper],
+      // [BlockDefs.BedMesh, ConfigBlockBedMesh],
+      // [BlockDefs.BedTilt, ConfigBlockBedTilt],
+      // [BlockDefs.BedScrews, ConfigBlockBedScrews],
+      // [BlockDefs.ScrewsTiltAdjust, ConfigBlockScrewsTiltAdjust],
+      // [BlockDefs.ZTilt, ConfigBlockZTilt],
+  ]) {
+    // console.log(o, c)
+
+    const data = new Block("asdfasdf")
+    console.log("data in index.html", data)
+
+    van.add(
+      one("#printer-cfg"),
+      Elem(
+        data,
+        {
+          pinouts: Object.keys(mcu_pinouts)
+            .filter(key => ["ldo_leviathan"].includes(key))
+            .reduce((obj, key) => {
+              obj[key] = mcu_pinouts[key];
+              return obj;
+            }, {})
+        }
+        // {
+        //   pinouts: Object.keys(mcu_pinouts)
+        //     .filter(key => ["ldo_leviathan"].includes(key))
+        //     .reduce((obj, key) => {
+        //       obj[key] = mcu_pinouts[key];
+        //       return obj;
+        //     }, {})
+        // },
+      )
+    )
+  }
+
+
 </script>
 </body>

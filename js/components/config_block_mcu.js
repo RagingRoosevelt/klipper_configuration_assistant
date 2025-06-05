@@ -2,14 +2,13 @@ import van from "../frameworks/van-1.5.5.js"
 import { ConfigBlock } from "./config_block.js"
 const { details, summary, div, label, input, select, option } = van.tags
 
-export const ConfigBlockMcu = (mcu_selection, o, pinouts) => {
-    console.log(Object.entries(pinouts).map(([k,v])=>option({value: k}, v.name)))
+export const ConfigBlockMcu = (o, options) => {
     return details(
         {
           class: "config-block mcu",
-            style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;",
-            open: true,
-            style: ""
+          style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;",
+          open: true,
+          style: ""
         },
         summary(van.derive(() => `[${o.name.val}]`)),
         div(
@@ -26,10 +25,10 @@ export const ConfigBlockMcu = (mcu_selection, o, pinouts) => {
             label({style: "display: inline-block; width: 20ch;",}, "MCU Model"),
             select(
               option(),
-              Object.entries(pinouts).map(([k,v])=>option({value: k}, v.name))
+              Object.entries(options.pinouts).map(([k,v])=>option({value: k}, v.name))
             )
           ),
-          ConfigBlock(o, pinouts)
+          ConfigBlock(o, options.pinouts)
     )
 }
 

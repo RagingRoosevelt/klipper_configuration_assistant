@@ -5,8 +5,10 @@ const { details, div, form, input, label, option, select, summary } = van.tags
 // todo: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 export const ConfigBlock = (o, pinouts={}) => {
   pinouts = pinouts.ldo_leviathan
+  console.log("data in config_block.js", o)
   let properties = []
   for (const k of Object.keys(o).filter((key)=>key!=="name")) {
+    console.log(k)
     const tooltip = o[k].desc?{"data-tooltip": o[k].desc}:{}
     let input_elem;
     if (o[k].options) {
@@ -23,10 +25,10 @@ export const ConfigBlock = (o, pinouts={}) => {
       const pin_type_key = o[k].pin_type.split(".")[0]
       let select_options;
 
-      if (pin_type_key === "stepper") {
+      if (pin_type_key === "stepper" && pinouts && pinouts.stepper) {
         const stepper_pin = o[k].pin_type.split(".")[1]
         select_options = pinouts.stepper.map(v=>option({value:v[stepper_pin]}, `${v[stepper_pin]} - ${v.name}`))
-      } else {
+      } else if (pinouts && pinouts[pin_type_key]) {
         select_options = pinouts[pin_type_key].map(v=>option({value:v.pin}, `${v.pin} - ${v.name}`))
       }
 

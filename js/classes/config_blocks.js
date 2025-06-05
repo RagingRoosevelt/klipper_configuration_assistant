@@ -1,6 +1,6 @@
 import van from "../frameworks/van-1.5.5.js"
 
-class Mcu {
+export class Mcu {
   constructor(name = undefined, options = {}) {
     this.name = van.state(name === undefined ? 'mcu' : `mcu ${name}`)
     this.serial = { value: van.state(undefined), required: false, desc: 'The serial port to connect to the MCU. If unsure (or if it changes) see the "Where\'s my serial port?" section of the FAQ. This parameter must be provided when using a serial port.' }
@@ -16,13 +16,13 @@ class Mcu {
   }
 }
 
-class Printer {
-  constructor(options = {}) {
+export class Printer {
+  constructor(unused, options = {}) {
     this.name = van.state('printer')
     this.kinematics = { value: van.state(undefined), required: true, options: ['cartesian', 'delta', 'corexy'] }
   }
 }
-class Stepper {
+export class Stepper {
   constructor(name, options = {}) {
     this.name = van.state(name)
     this.step_pin = { value: van.state(undefined), required: true, pin_type: 'stepper.step' }
@@ -49,7 +49,7 @@ class Stepper {
     }
   }
 }
-class Extruder {
+export class Extruder {
   constructor(name = undefined, options = {}) {
     this.name = 'extruder'
     this.step_pin = { value: van.state(undefined), required: true, desc: '' }
@@ -91,8 +91,46 @@ class Extruder {
   }
 
 }
-class HeaterBed {
+export class HeaterBed {
 
 }
-
-export {Mcu, Printer, Stepper, Extruder, HeaterBed}
+export class BedTilt {
+  constructor(name = undefined, options={}) {
+    this.name = van.state(name)
+    this.x_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the X axis. The default is 0.'}
+    this.y_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the Y axis. The default is 0.'}
+    this.z_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to the Z height when the nozzle is nominally at 0, 0. The default is 0. The remaining parameters control a BED_TILT_CALIBRATE extended g-code command that may be used to calibrate appropriate x and y adjustment parameters.'}
+    this.points = {value: van.state(undefined), required: true, desc: 'A list of X, Y coordinates (one per line; subsequent lines indented) that should be probed during a BED_TILT_CALIBRATE command. Specify coordinates of the nozzle and be sure the probe is above the bed at the given nozzle coordinates. The default is to not enable the command. speed: 50 The speed (in mm/s) of non-probing moves during the calibration. The default is 50. horizontal_move_z: 5 The height (in mm) that the head should be commanded to move to just prior to starting a probe operation. The default is 5.'}
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}
+export class BedScrews {
+  constructor(name = undefined, options={}) {
+    this.name = van.state(name)
+    this.screw1 =             {value: van.state(undefined), required: true, desc: 'The X, Y coordinate of the first bed leveling screw. This is a position to command the nozzle to that is directly above the bed screw (or as close as possible while still being above the bed). This parameter must be provided.'}
+    this.screw1_name =        {value: van.state(undefined), required: false, desc: 'An arbitrary name for the given screw. This name is displayed when the helper script runs. The default is to use a name based upon the screw XY location.'}
+    this.screw1_fine_adjust = {value: van.state(undefined), required: false, desc: 'An X, Y coordinate to command the nozzle to so that one can fine tune the bed leveling screw. The default is to not perform fine adjustments on the bed screw.'}
+    this.screw2 =             {value: van.state(undefined), required: true, desc: ""}
+    this.screw2_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.screw2_fine_adjust = {value: van.state(undefined), required: false, desc: ""}
+    this.screw3 =             {value: van.state(undefined), required: true, desc: ""}
+    this.screw3_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.screw3_fine_adjust = {value: van.state(undefined), required: false, desc: ""}
+    this.screw4 =             {value: van.state(undefined), required: false, desc: ""}
+    this.screw4_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.screw4_fine_adjust = {value: van.state(undefined), required: false, desc: ""}
+    this.horizontal_move_z =  {value: van.state(undefined), required: false, default: 5, desc: 'The height (in mm) that the head should be commanded to move to when moving from one screw location to the next. The default is 5.'}
+    this.probe_height =       {value: van.state(undefined), required: false, default: 0, desc: 'The height of the probe (in mm) after adjusting for the thermal expansion of bed and nozzle. The default is zero.'}
+    this.speed =              {value: van.state(undefined), required: false, default: 50, desc: 'The speed (in mm/s) of non-probing moves during the calibration. The default is 50.'}
+    this.probe_speed =        {value: van.state(undefined), required: false, default: 5, desc: 'The speed (in mm/s) when moving from a horizontal_move_z position to a probe_height position. The default is 5.'}
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}

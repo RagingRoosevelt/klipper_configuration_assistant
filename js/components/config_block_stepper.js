@@ -2,20 +2,18 @@ import van from "../frameworks/van-1.5.5.js"
 import { ConfigBlock } from "./config_block.js"
 const { details, summary, div, label, input, select, option } = van.tags
 
-export const ConfigBlockStepper = (mcu_selection, o, pinouts) => {
-    console.log(Object.entries(pinouts).map(([k,v])=>option({value: k}, v.name)))
+export const ConfigBlockStepper = (o, options) => {
     return details(
         {
-            style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;",
+            class: "config-block stepper",
             open: true,
-            style: ""
         },
         summary(van.derive(() => `[${o.name.val}]`)),
         div(
             label({style: "display: inline-block; width: 20ch;", "data-tooltip": "Leave blank for primary MCU"}, "Stepper role"),
             select(
                 {
-                    style: "width: auto; height: calc(1rem * var(--pico-line-height) + var(--pico-border-width) * 2);",
+                    style: "width: auto;",
                     value: o.name.val.split(" ")[1],
                     oninput: (e)=>o.name.val = (
                         e.target.value!=="--required--"?e.target.value:undefined
@@ -37,7 +35,7 @@ export const ConfigBlockStepper = (mcu_selection, o, pinouts) => {
                 option("stepper_arm"),
             )
           ),
-          ConfigBlock(o, pinouts)
+          ConfigBlock(o, options.pinouts)
     )
 }
 

@@ -13,14 +13,14 @@ export const Toast = (toast_info) => {
     is_visible.val = false
     clearTimeout(toast_timeout_countdown)
 
-    show_message()
+    setTimeout(show_message, 50)
   }
 
   const show_message = () => {
     if (is_visible.val === false && message_queue.length > 0) {
       const message = message_queue.pop()
       message_to_show.val = {
-        message: message.message, 
+        message: message.message,
         type: message.type
       }
       toast_location.val = message.location?message.location:'top-right'
@@ -32,26 +32,26 @@ export const Toast = (toast_info) => {
   van.derive(()=>{
     if (toast_info.val.message && toast_info.val.message.length>0) {
       message_queue.push({
-        message: toast_info.val.message, 
+        message: toast_info.val.message,
         type: toast_info.val.type,
         ...(toast_info.val.timeout?{timeout: toast_info.val.timeout}:{}),
         ...(toast_info.val.location?{location: toast_info.val.location}:{}),
       })
-      console.log(message_queue)
-      show_message()
+
+      setTimeout(show_message, 50)
     }
   })
 
   return div(
     {
       class: van.derive(()=>[
-        "toast", 
-        is_visible.val?"":"hidden", 
+        "toast",
+        is_visible.val?"":"hidden",
         `${message_to_show.val.type}`,
         `${toast_location.val}`,
       ].join(" ")),
     },
-    span(van.derive(()=>`${message_to_show.val.message}`)),
-    button({style: "margin-left: 10px;", onclick: clear_toast}, "✕")
+    button({onclick: clear_toast}, "✕"),
+    van.derive(()=>`${message_to_show.val.message}`),
   )
 }
