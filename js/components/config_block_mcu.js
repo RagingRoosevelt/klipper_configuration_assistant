@@ -1,6 +1,6 @@
 import van from "../frameworks/van-1.5.5.js"
 import { ConfigBlock } from "./config_block.js"
-const { details, summary, div, label, input, select, option } = van.tags
+const { details, summary, div, label, input, select, option, h2, code } = van.tags
 
 export const ConfigBlockMcu = (o, options) => {
     return details(
@@ -10,14 +10,14 @@ export const ConfigBlockMcu = (o, options) => {
           open: true,
           style: ""
         },
-        summary(van.derive(() => `[${o.name.val}]`)),
+        summary(h2(code(van.derive(() => `[${o.name.val}]`)))),
         div(
             label({style: "display: inline-block; width: 20ch;", "data-tooltip": "Leave blank for primary MCU"}, "MCU name"),
             input({
               style: "width: auto; height: calc(1rem * var(--pico-line-height) + var(--pico-border-width) * 2);",
               value: o.name.val.split(" ")[1],
               oninput: (e)=>o.name.val = (
-                e.target.value!==""?`${o.name.val.split(" ")[0]} ${e.target.value}`:o.name.val.split(" ")[0]
+                e.target.value!==""?`${o.name.val.split(" ")[0]} ${e.target.value.replaceAll(" ", "_")}`:o.name.val.split(" ")[0]
               )
             })
           ),

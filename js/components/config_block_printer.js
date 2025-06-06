@@ -1,6 +1,6 @@
 import van from "../frameworks/van-1.5.5.js"
 import { ConfigBlock } from "./config_block.js"
-const { details, summary, div, label, input, select, option } = van.tags
+const { details, summary, div, label, input, select, option, h1, code } = van.tags
 
 export const ConfigBlockPrinter = (o, options) => {
     return details(
@@ -10,7 +10,7 @@ export const ConfigBlockPrinter = (o, options) => {
             open: true,
             style: ""
         },
-        summary(`[${o.name.val}]`),
+        summary(h1(code(`[${o.name.val}]`))),
         ConfigBlock(o, options.pinouts)
     )
 }

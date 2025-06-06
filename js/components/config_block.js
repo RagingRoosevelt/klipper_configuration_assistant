@@ -2,15 +2,57 @@ import van from "../frameworks/van-1.5.5.js"
 const { details, div, form, input, label, option, select, summary } = van.tags
 
 
+export const ConfigBlockItem = (input_var, label_str, tooltip_str, options) => {
+  const uuid = self.crypto.randomUUID()
+
+  const elem_lbl = label(
+    {
+      for: `${label_str}-${uuid}`,
+      ...(tooltip_str?{"data-tooltip": tooltip_str}:{})
+    },
+    van.derive(()=>`${label_str}`)
+  )
+  let elem_inpt
+
+  if (options !== undefined) {
+    elem_inpt = select(
+      { onimput: (e) => o.value.val = e.target.value },
+      ...options.map(o=>option({value: o.value}, o.text))
+    )
+  } else {
+    elem_inpt = input(
+      {
+        onchange: (e) => input_var.val = e.target.value
+      },
+      `${input_var.val}`
+      )
+  }
+
+
+  return div(
+    {
+      class: "config-block-item"
+    },
+    elem_lbl,
+    elem_inpt,
+  )
+}
+
 // todo: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 export const ConfigBlock = (o, pinouts={}) => {
   pinouts = pinouts.ldo_leviathan
-  console.log("data in config_block.js", o)
+  // console.log("data in config_block.js", o)
   let properties = []
   for (const k of Object.keys(o).filter((key)=>key!=="name")) {
-    console.log(k)
+    // console.log(k)
     const tooltip = o[k].desc?{"data-tooltip": o[k].desc}:{}
     let input_elem;
+
+    let options
+    if (o[k].options) {
+
+    }
+
     if (o[k].options) {
       input_elem = select(
         {
@@ -51,6 +93,7 @@ export const ConfigBlock = (o, pinouts={}) => {
         required: o[k].required
       })
     }
+
     properties.push(div(
       {style: "padding: 5px;"},
       label({
@@ -61,6 +104,18 @@ export const ConfigBlock = (o, pinouts={}) => {
       // todo: need CSS for :invalid:required
       input_elem
     ))
+    properties.push(
+      ConfigBlockItem(
+        o[k].value,
+        k,
+        o[k].desc,
+        options=[
+          {text: "--required--", value: undefined},
+          {text: "asfasdfasf", value: "aaaaa"},
+          {text: "bksdkljsdfbzz", value: "bbbb"},
+        ]
+      )
+    )
   }
 
 

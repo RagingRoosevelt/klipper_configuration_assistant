@@ -12,12 +12,7 @@
     form {
       margin: 1rem 10ch;
     }
-    [data-tooltip]:before {
-      max-width: min(450px, 80vw);
-      width: max-content;
-      white-space: normal;
-      word-wrap: break-word;
-    }
+
     .hidden {
       visibility: hidden;
     }
@@ -31,7 +26,7 @@
 
   </header>
   <details open id="printer-cfg" style="border: 3px solid black; margin: 10px; padding: 10px; border-radius: 10px;">
-    <summary><code style="color: var(--pico-color);">printer.cfg</code></summary>
+    <summary><h1><code style="color: var(--pico-color);">printer.cfg</code></h1></summary>
   </details>
   <dialog id="add_edit_block">
     <select id="block_type">
@@ -207,7 +202,6 @@
     // console.log(o, c)
 
     const data = new Block("asdfasdf")
-    console.log("data in index.html", data)
 
     van.add(
       one("#printer-cfg"),

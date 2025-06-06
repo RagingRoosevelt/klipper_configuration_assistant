@@ -9,11 +9,23 @@ select {
     width: auto;
 }
 
+/* For ConfigBlock and ConfigBlockItem components: config_block.js */
 .config-block {
     border: 1px dashed black;
     margin: 10px;
     padding: 10px;
     border-radius: 10px;
+    & .config-block-item {
+        label, select, input {
+            display: inline-block;
+        }
+    }
+    [data-tooltip]:before {
+        max-width: min(350px, 80vw);
+        width: max-content;
+        white-space: normal;
+        word-wrap: break-word;
+    }
 }
 
 /* For toast component: toast.js */
