@@ -1,13 +1,15 @@
 import van from "../frameworks/van-1.5.5.js"
-const { details, div, form, input, label, option, select, summary } = van.tags
+const { details, div, form, input, label, option, optgroup, select, summary } = van.tags
 
 
-export const ConfigBlockItem = (input_var, label_str, tooltip_str, options) => {
+export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, options) => {
+  // console.log(label_str, input_var, options)
   const uuid = self.crypto.randomUUID()
+  const input_label_name = `${label_str}-${uuid}`
 
   const elem_lbl = label(
     {
-      for: `${label_str}-${uuid}`,
+      for: input_label_name,
       ...(tooltip_str?{"data-tooltip": tooltip_str}:{})
     },
     van.derive(()=>`${label_str}`)
@@ -16,13 +18,15 @@ export const ConfigBlockItem = (input_var, label_str, tooltip_str, options) => {
 
   if (options !== undefined) {
     elem_inpt = select(
-      { onimput: (e) => o.value.val = e.target.value },
-      ...options.map(o=>option({value: o.value}, o.text))
+      { onimput: (e) => o.value.val = e.target.value, name: input_label_name },
+      ...options.map(o=>o.group?optgroup({label: `${o.group}`}):option({value: o.value||o.text}, o.text||o.value))
     )
   } else {
     elem_inpt = input(
       {
-        onchange: (e) => input_var.val = e.target.value
+        onchange: (e) => input_var.val = e.target.value,
+        required: required,
+        name: input_label_name,
       },
       `${input_var.val}`
       )
@@ -94,26 +98,31 @@ export const ConfigBlock = (o, pinouts={}) => {
       })
     }
 
-    properties.push(div(
-      {style: "padding: 5px;"},
-      label({
-        style: "display: inline-block; width: 20ch;",
-        for:`${o.name.val.replace(" ","_")}-${k}`,
-        ...tooltip
-      }, k),
-      // todo: need CSS for :invalid:required
-      input_elem
-    ))
+    // properties.push(div(
+    //   {style: "padding: 5px;"},
+    //   label({
+    //     style: "display: inline-block; width: 20ch;",
+    //     for:`${o.name.val.replace(" ","_")}-${k}`,
+    //     ...tooltip
+    //   }, k),
+    //   // todo: need CSS for :invalid:required
+    //   input_elem
+    // ))
+    let input_options = undefined
+    if (o[k].options){
+      if (o[k].required) {
+        input_options = [{text: "--required--"}, ...o[k].options]
+      } else {
+        input_options = [{text: ""}, ...o[k].options]
+      }
+    }
     properties.push(
       ConfigBlockItem(
         o[k].value,
         k,
         o[k].desc,
-        options=[
-          {text: "--required--", value: undefined},
-          {text: "asfasdfasf", value: "aaaaa"},
-          {text: "bksdkljsdfbzz", value: "bbbb"},
-        ]
+        o[k].required,
+        input_options
       )
     )
   }
@@ -125,7 +134,8 @@ export const ConfigBlock = (o, pinouts={}) => {
 
 
   return     form(
-    {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
+    {class: "grid",},
+    // {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
     ...properties
   )
 }

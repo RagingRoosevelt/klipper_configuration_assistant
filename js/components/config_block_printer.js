@@ -10,7 +10,7 @@ export const ConfigBlockPrinter = (o, options) => {
             open: true,
             style: ""
         },
-        summary(h1(code(`[${o.name.val}]`))),
+        summary(h1(`[${o.name.val}]`)),
         ConfigBlock(o, options.pinouts)
     )
 }

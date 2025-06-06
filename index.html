@@ -67,6 +67,8 @@
   van.add(document.body, Toast(toast_info))
   // console.log(toast_message)
 
+  let selected_mcus = []
+
 
   // function makeid(length) {
   //     var result           = '';
@@ -189,7 +191,11 @@
   // van.add(document.body, ConfigBlock(mcu, mcu_pinouts.ldo_leviathan))
   // van.add(document.body, ConfigBlock(stepper_x, mcu_pinouts.ldo_leviathan))
 
-  for (const [Block, Elem] of [
+  function changed_mcu_selection(idx, selection) {
+    console.log(`${idx} picked ${selection}`)
+  }
+
+  for (const [idx, [Block, Elem]] of [
       [BlockDefs.Printer, ConfigBlockPrinter],
       [BlockDefs.Mcu, ConfigBlockMcu],
       [BlockDefs.Stepper, ConfigBlockStepper],
@@ -198,32 +204,29 @@
       // [BlockDefs.BedScrews, ConfigBlockBedScrews],
       // [BlockDefs.ScrewsTiltAdjust, ConfigBlockScrewsTiltAdjust],
       // [BlockDefs.ZTilt, ConfigBlockZTilt],
-  ]) {
-    // console.log(o, c)
+  ].entries()) {
+    // const [Block, Elem] = Block_Elem
+    const block_type = Block.prototype.constructor.name
 
-    const data = new Block("asdfasdf")
+    if (block_type === "Mcu") {
+      selected_mcus.push(van.state(undefined))
+    }
 
-    van.add(
-      one("#printer-cfg"),
-      Elem(
-        data,
-        {
+    const elem_options = {
           pinouts: Object.keys(mcu_pinouts)
-            .filter(key => ["ldo_leviathan"].includes(key))
+            .filter(key => ["ldo_leviathan", "ldo_picobilical", "fysetc_spyder_2_2"].includes(key))
             .reduce((obj, key) => {
               obj[key] = mcu_pinouts[key];
               return obj;
             }, {})
         }
-        // {
-        //   pinouts: Object.keys(mcu_pinouts)
-        //     .filter(key => ["ldo_leviathan"].includes(key))
-        //     .reduce((obj, key) => {
-        //       obj[key] = mcu_pinouts[key];
-        //       return obj;
-        //     }, {})
-        // },
-      )
+
+    const data = (block_type === "Mcu")?new Block(""):new Block("--required--")
+    const elem = (block_type === "Mcu")?Elem(data, elem_options, (new_mcu)=>changed_mcu_selection(idx, new_mcu)):Elem(data, elem_options)
+
+    van.add(
+      one("#printer-cfg"),
+      elem
     )
   }
 

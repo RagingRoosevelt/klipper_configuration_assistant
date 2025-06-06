@@ -1,6 +1,6 @@
 import van from "../frameworks/van-1.5.5.js"
 import { ConfigBlock } from "./config_block.js"
-const { details, summary, div, label, input, select, option } = van.tags
+const { details, summary, div, label, input, select, option, h2 } = van.tags
 
 export const ConfigBlockStepper = (o, options) => {
   const pinouts = options.pinouts.ldo_leviathan
@@ -12,28 +12,35 @@ export const ConfigBlockStepper = (o, options) => {
 
         if (pin_type_key === "stepper") {
             const stepper_pin = o[k].pin_type.split(".")[1]
-            input_options = pinouts.stepper.map(v => {return { value: v[stepper_pin], text: `${v[stepper_pin]} - ${v.name}`}})
+            input_options = []
+            for (const source of Object.values(options.pinouts)) {
+                if (source.stepper.length > 0) {
+                    input_options.push({group: `${source.shortname}`})
+                    input_options = input_options.concat(
+                        source.stepper.map(v => {return { value: v[stepper_pin], text: `${v[stepper_pin]} - ${v.name}`}})
+                    )
+                }
+            }
+            
         } else {
           input_options = []
           for (const source of Object.values(options.pinouts)) {
-            input_options.push(optgroup({label: `${source.shortname}`}))
-            input_options = pinouts[pin_type].map(v => {return { value: v.pin, text: `${v.pin} - ${v.name}`}})
+            if (source[pin_type].length > 0)
+            input_options.push({group: `${source.shortname}`})
+            input_options = input_options.concat(
+                source[pin_type].map(v => {return { value: v.pin, text: `${v.pin} - ${v.name}`}})
+            )
           }
         }
     } else {
         input_options = undefined
     }
-    console.log(k, o[k], input_options)
+    // console.log(k, o[k], input_options)
     o[k] = {
-        ...input_options,
+        options: input_options,
         ...o[k]
     }
   })
-
-
-    console.log("modified object", o)
-    console.log(o.name.val)
-
 
 
 
@@ -42,7 +49,7 @@ export const ConfigBlockStepper = (o, options) => {
             class: "config-block stepper",
             open: true,
         },
-        summary(van.derive(() => `[${o.name.val}]`)),
+        summary(h2(van.derive(() => `[${o.name.val}]`))),
         div(
             label({ style: "display: inline-block; width: 20ch;", "data-tooltip": "Leave blank for primary MCU" }, "Stepper role"),
             select(

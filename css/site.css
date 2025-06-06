@@ -9,22 +9,59 @@ select {
     width: auto;
 }
 
+.grid {
+    /* https://chriskirknielsen.com/blog/css-grid-with-a-preferred-column-count/ */
+    --_cols: max(1, var(--cols, 3)); /* Ideal number of columns is 3 by default; at least one! */
+    --_gap: var(--gap, 2.5rem); /* Space between each logo */
+    --_min: var(--min, 300px); /* Logos must be at least this wide */
+    --_max: var(--max, 450px); /* Logos cannot be wider than this size */
+    display: grid;
+    gap: var(--_gap);
+    grid-template-columns: repeat(auto-fill, minmax(max(var(--_min), calc((100% - var(--_gap) * (var(--_cols) - 1)) / var(--_cols))), 1fr));
+}
+
 /* For ConfigBlock and ConfigBlockItem components: config_block.js */
 .config-block {
+    /* --pico-line-height: 1; */
+    --number-of-columns: calc(floor(100% / 400px));
+    --pico-font-size: 0.75rem;
     border: 1px dashed black;
     margin: 10px;
     padding: 10px;
     border-radius: 10px;
+    label, select, input {
+        padding: 0 var(--pico-form-element-spacing-horizontal);
+        display: inline-block;
+        width: auto;
+        height: unset;
+    }
+    form {
+        --cols: 3;
+        --gap: 0.5rem;
+        /* grid-template-columns: repeat(var(--number-of-columns), 1fr); */
+        /* column-width: 30ch; */
+    }
     & .config-block-item {
-        label, select, input {
-            display: inline-block;
+        select, input {
+            float: right;
+        }
+        input {
+            max-width: 10ch;
+        }
+        input:is([name^="serial"],[name^="canbus_uuid"]) {
+            max-width: 30ch;
         }
     }
     [data-tooltip]:before {
         max-width: min(350px, 80vw);
         width: max-content;
-        white-space: normal;
-        word-wrap: break-word;
+        /* white-space: normal; */
+        /* word-wrap: break-word; */
+        /* white-space: pre; */
+        white-space: pre-wrap;
+    }
+    & summary * {
+        font-family: monospace;
     }
 }
 
