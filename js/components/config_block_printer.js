@@ -6,9 +6,7 @@ export const ConfigBlockPrinter = (o, options) => {
     return details(
         {
             class: "config-block printer",
-            style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;",
-            open: true,
-            style: ""
+            open: options.open!==undefined?options.open:true,
         },
         summary(h1(`[${o.name.val}]`)),
         ConfigBlock(o, options.pinouts)

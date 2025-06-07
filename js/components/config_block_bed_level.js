@@ -6,9 +6,7 @@ export const ConfigBlockBedLevel = (cfg_blk, options) => {
     return details(
         {
             class: "config-block bed-level",
-            style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;",
-            open: true,
-            style: ""
+            open: options.open!==undefined?options.open:true,
         },
         summary(van.derive(()=>{
             return `[${cfg_blk.name.val}]`

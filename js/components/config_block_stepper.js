@@ -21,7 +21,7 @@ export const ConfigBlockStepper = (o, options) => {
                     )
                 }
             }
-            
+
         } else {
           input_options = []
           for (const source of Object.values(options.pinouts)) {
@@ -35,7 +35,6 @@ export const ConfigBlockStepper = (o, options) => {
     } else {
         input_options = undefined
     }
-    // console.log(k, o[k], input_options)
     o[k] = {
         options: input_options,
         ...o[k]
@@ -47,7 +46,7 @@ export const ConfigBlockStepper = (o, options) => {
     return details(
         {
             class: "config-block stepper",
-            open: true,
+            open: options.open!==undefined?options.open:true,
         },
         summary(h2(van.derive(() => `[${o.name.val}]`))),
         div(

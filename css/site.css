@@ -5,8 +5,9 @@
     --pico-spacing: 0.25rem;
 }
 
-select {
-    width: auto;
+
+.hidden {
+    visibility: hidden;
 }
 
 .grid {
@@ -20,48 +21,92 @@ select {
     grid-template-columns: repeat(auto-fill, minmax(max(var(--_min), calc((100% - var(--_gap) * (var(--_cols) - 1)) / var(--_cols))), 1fr));
 }
 
-/* For ConfigBlock and ConfigBlockItem components: config_block.js */
-.config-block {
-    /* --pico-line-height: 1; */
-    --number-of-columns: calc(floor(100% / 400px));
-    --pico-font-size: 0.75rem;
-    border: 1px dashed black;
-    margin: 10px;
-    padding: 10px;
+textarea {
+    vertical-align: top;
+}
+
+.app-modal {
+    flex-direction: column;
+    max-width: 600px;
+    width: 80vw;
+    max-height: 1000px;
+    code {
+        width: 100%;
+        overflow-y: scroll;
+    }
+}
+
+.app-modal h1, .config-file summary > * {
+    font-family: monospace;
+}
+
+.config-file {
+    border: 3px solid black;
     border-radius: 10px;
-    label, select, input {
-        padding: 0 var(--pico-form-element-spacing-horizontal);
-        display: inline-block;
-        width: auto;
-        height: unset;
+
+    summary::after {
+        translate: 0 calc(-1rem * var(--pico-line-height));
     }
-    form {
-        --cols: 3;
-        --gap: 0.5rem;
-        /* grid-template-columns: repeat(var(--number-of-columns), 1fr); */
-        /* column-width: 30ch; */
-    }
-    & .config-block-item {
-        select, input {
-            float: right;
+
+    /* For ConfigBlock and ConfigBlockItem components: config_block.js */
+    .config-block {
+        /* --pico-line-height: 1; */
+        --number-of-columns: calc(floor(100% / 400px));
+        --pico-font-size: 0.75rem;
+        border: 1px dashed black;
+        margin: 10px;
+        /* padding: 10px; */
+        border-radius: 10px;
+        label, select, input {
+            padding: 0 var(--pico-form-element-spacing-horizontal);
+            display: inline-block;
+            width: auto;
+            height: unset;
         }
-        input {
-            max-width: 10ch;
+
+        summary {
+            background-color: hsl(0, 0%, 98%);
+            border-radius: 10px;
+            padding: 5px 10px;
+            & > * {
+                margin: 0;
+                font-size: 1.25rem;
+            }
         }
-        input:is([name^="serial"],[name^="canbus_uuid"]) {
-            max-width: 30ch;
+        &[open] summary {
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
         }
-    }
-    [data-tooltip]:before {
-        max-width: min(350px, 80vw);
-        width: max-content;
-        /* white-space: normal; */
-        /* word-wrap: break-word; */
-        /* white-space: pre; */
-        white-space: pre-wrap;
-    }
-    & summary * {
-        font-family: monospace;
+
+
+        form {
+            --cols: 4;
+            --gap: 0.5rem;
+        }
+        & .config-block-item {
+            select, input, textarea {
+                float: right;
+            }
+            input {
+                max-width: 10ch;
+            }
+            input:is([name^="serial"],[name^="canbus_uuid"]) {
+                max-width: 30ch;
+            }
+            textarea {
+                display: inline-block;
+            }
+            &.required::before {
+                content: "*";
+                color: red;
+            }
+        }
+        [data-tooltip]:before {
+            max-width: min(450px, 50vw);
+            width: max-content;
+            /* white-space: pre; */
+            white-space: pre-wrap;
+        }
     }
 }
 

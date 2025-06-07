@@ -1,5 +1,11 @@
 import van from "../frameworks/van-1.5.5.js"
 
+export const INPUT_TYPE = {
+  MULTILINE: "MULTILINE",
+  SELECT: "SELECT",
+  TEXT: "TEXT",
+}
+
 export class Mcu {
   constructor(name = undefined, options = {}) {
     this.name = van.state((name === undefined || name === "") ? 'mcu' : `mcu ${name}`)
@@ -21,8 +27,8 @@ export class Printer {
     this.name = van.state('printer')
     this.kinematics = { value: van.state(undefined), required: true, options: [
       {group: 'Common'},
-      {value:'cartesian'}, 
-      {value:'delta'}, 
+      {value:'cartesian'},
+      {value:'delta'},
       {value:'corexy'},
       {group: 'Uncommon'},
       {value: 'deltesian'},
@@ -33,7 +39,7 @@ export class Printer {
       {value: 'rotary_delta'},
       {value: 'winch'},
       {value: 'generic_cartesian'},
-    ], requires_others: {
+    ], other_required_blocks: {
       cartesian: ['stepper_x', 'stepper_y', 'stepper_z'],
       delta: ['stepper_a', 'stepper_b', 'stepper_c', 'delta_calibrate'],
       deltesian: ['stepper_left', 'stepper_right', 'stepper_y'],
@@ -45,7 +51,7 @@ export class Printer {
       rotary_delta: ['stepper_a', 'stepper_b', 'stepper_c', 'delta_calibrate'],
       winch: ['stepper_a', 'stepper_b', 'stepper_c'],
       generic_cartesian: ['carriage x', 'carriage y', 'carriage z']
-    }, requires_self: {
+    }, self_required_keys: {
       cartesian: ['max_z_velocity', 'max_z_accel'],
       delta: ['max_z_velocity', 'delta_radius'],
       deltesian: ['max_z_velocity'],
@@ -56,13 +62,35 @@ export class Printer {
       polar: ['max_z_velocity', 'max_z_accel'],
       rotary_delta: ['max_z_velocity', 'shoulder_radius', 'shoulder_height'],
       winch: ['max_velocity', 'max_accel'],
+    }, self_optional_keys: {
+      cartesian: [],
+      delta: ['max_z_accel', 'minimum_z_position', 'print_radius'],
+      deltesian: ['max_z_accel', 'minimum_z_position', 'min_angle', 'print_width', 'slow_ratio'],
+      corexy: [],
+      corexz: [],
+      hybrid_corexy: [],
+      hybrid_corexz: [],
+      polar: [],
+      rotary_delta: ['minimum_z_position'],
+      winch: [],
     }, desc: 'The type of printer in use. This option may be one of: cartesian,\ncorexy, corexz, hybrid_corexy, hybrid_corexz, generic_cartesian,\nrotary_delta, delta, deltesian, polar, winch, or none.\nThis parameter must be specified.' }
-    this.max_velocity = {value: van.state(undefined), required: false, desc: 'Maximum velocity (in mm/s) of the toolhead (relative to the\nprint). This value may be changed at runtime using the\nSET_VELOCITY_LIMIT command. This parameter must be specified.'}
-    this.max_accel = {value: van.state(undefined), required: false, desc: 'Maximum acceleration (in mm/s^2) of the toolhead (relative to the\nprint). Although this parameter is described as a "maximum"\nacceleration, in practice most moves that accelerate or decelerate\nwill do so at the rate specified here. The value specified here\nmay be changed at runtime using the SET_VELOCITY_LIMIT command.\nThis parameter must be specified.'}
+    this.max_velocity = {value: van.state(undefined), required: true, desc: 'Maximum velocity (in mm/s) of the toolhead (relative to the\nprint). This value may be changed at runtime using the\nSET_VELOCITY_LIMIT command. This parameter must be specified.'}
+    this.max_accel = {value: van.state(undefined), required: true, desc: 'Maximum acceleration (in mm/s^2) of the toolhead (relative to the\nprint). Although this parameter is described as a "maximum"\nacceleration, in practice most moves that accelerate or decelerate\nwill do so at the rate specified here. The value specified here\nmay be changed at runtime using the SET_VELOCITY_LIMIT command.\nThis parameter must be specified.'}
     this.minimum_cruise_ratio = {value: van.state(undefined), required: false, default: 0.5, desc: 'Most moves will accelerate to a cruising speed, travel at that\ncruising speed, and then decelerate. However, some moves that\ntravel a short distance could nominally accelerate and then\nimmediately decelerate. This option reduces the top speed of these\nmoves to ensure there is always a minimum distance traveled at a\ncruising speed. That is, it enforces a minimum distance traveled\nat cruising speed relative to the total distance traveled. It is\nintended to reduce the top speed of short zigzag moves (and thus\nreduce printer vibration from these moves). For example, a\nminimum_cruise_ratio of 0.5 would ensure that a standalone 1.5mm\nmove would have a minimum cruising distance of 0.75mm. Specify a\nratio of 0.0 to disable this feature (there would be no minimum\ncruising distance enforced between acceleration and deceleration).\nThe value specified here may be changed at runtime using the\nSET_VELOCITY_LIMIT command. The default is 0.5.'}
     this.square_corner_velocity = {value: van.state(undefined), required: false, desc: 'The maximum velocity (in mm/s) that the toolhead may travel a 90\ndegree corner at. A non-zero value can reduce changes in extruder\nflow rates by enabling instantaneous velocity changes of the\ntoolhead during cornering. This value configures the internal\ncentripetal velocity cornering algorithm; corners with angles\nlarger than 90 degrees will have a higher cornering velocity while\ncorners with angles less than 90 degrees will have a lower\ncornering velocity. If this is set to zero then the toolhead will\ndecelerate to zero at each corner. The value specified here may be\nchanged at runtime using the SET_VELOCITY_LIMIT command. The\ndefault is 5mm/s.'}
+    this.delta_radius = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.max_z_accel = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.max_z_velocity = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.min_angle = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.minimum_z_position = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.print_radius = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.print_width = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.shoulder_height = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.shoulder_radius = {value: van.state(undefined), required: false, shown: false, desc: ''}
+    this.slow_ratio = {value: van.state(undefined), required: false, shown: false, desc: ''}
   }
 }
+
 export class Stepper {
   constructor(name, options = {}) {
     this.name = van.state(name)
@@ -136,12 +164,14 @@ export class HeaterBed {
 
 }
 export class BedTilt {
-  constructor(name = undefined, options={}) {
-    this.name = van.state(name)
-    this.x_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the X axis. The default is 0.'}
-    this.y_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the Y axis. The default is 0.'}
-    this.z_adjust = {value: van.state(undefined), required: true, default: 0, desc: 'The amount to add to the Z height when the nozzle is nominally at 0, 0. The default is 0. The remaining parameters control a BED_TILT_CALIBRATE extended g-code command that may be used to calibrate appropriate x and y adjustment parameters.'}
-    this.points = {value: van.state(undefined), required: true, desc: 'A list of X, Y coordinates (one per line; subsequent lines indented) that should be probed during a BED_TILT_CALIBRATE command. Specify coordinates of the nozzle and be sure the probe is above the bed at the given nozzle coordinates. The default is to not enable the command. speed: 50 The speed (in mm/s) of non-probing moves during the calibration. The default is 50. horizontal_move_z: 5 The height (in mm) that the head should be commanded to move to just prior to starting a probe operation. The default is 5.'}
+  constructor(unused, options={}) {
+    this.name = van.state("bed_tilt")
+    this.x_adjust = {value: van.state(undefined), required: false, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the X axis. The default is 0.'}
+    this.y_adjust = {value: van.state(undefined), required: false, default: 0, desc: 'The amount to add to each move\'s Z height for each mm on the Y axis. The default is 0.'}
+    this.z_adjust = {value: van.state(undefined), required: false, default: 0, desc: 'The amount to add to the Z height when the nozzle is nominally at 0, 0. The default is 0. The remaining parameters control a BED_TILT_CALIBRATE extended g-code command that may be used to calibrate appropriate x and y adjustment parameters.'}
+    this.points = {value: van.state(undefined), required: true, input_type: INPUT_TYPE.MULTILINE, desc: 'A list of X, Y coordinates (one per line; subsequent lines\nindented) that should be probed during a BED_TILT_CALIBRATE\ncommand. Specify coordinates of the nozzle and be sure the probe\nis above the bed at the given nozzle coordinates. The default is\nto not enable the command.'}
+    this.speed = {value: van.state(undefined), required: false, default: 50, desc: 'The speed (in mm/s) of non-probing moves during the calibration.\nThe default is 50.'}
+    this.horizontal_move_z = {value: van.state(undefined), required: false, default: 5, desc: 'The height (in mm) that the head should be commanded to move to\njust prior to starting a probe operation. The default is 5.'}
     for (const p of Object.keys(this)) {
       if (p in options) {
         this[p].value = options[p]
@@ -150,8 +180,8 @@ export class BedTilt {
   }
 }
 export class BedScrews {
-  constructor(name = undefined, options={}) {
-    this.name = van.state(name)
+  constructor(unused, options={}) {
+    this.name = van.state("bed_screws")
     this.screw1 =             {value: van.state(undefined), required: true, desc: 'The X, Y coordinate of the first bed leveling screw. This is a position to command the nozzle to that is directly above the bed screw (or as close as possible while still being above the bed). This parameter must be provided.'}
     this.screw1_name =        {value: van.state(undefined), required: false, desc: 'An arbitrary name for the given screw. This name is displayed when the helper script runs. The default is to use a name based upon the screw XY location.'}
     this.screw1_fine_adjust = {value: van.state(undefined), required: false, desc: 'An X, Y coordinate to command the nozzle to so that one can fine tune the bed leveling screw. The default is to not perform fine adjustments on the bed screw.'}
@@ -168,6 +198,27 @@ export class BedScrews {
     this.probe_height =       {value: van.state(undefined), required: false, default: 0, desc: 'The height of the probe (in mm) after adjusting for the thermal expansion of bed and nozzle. The default is zero.'}
     this.speed =              {value: van.state(undefined), required: false, default: 50, desc: 'The speed (in mm/s) of non-probing moves during the calibration. The default is 50.'}
     this.probe_speed =        {value: van.state(undefined), required: false, default: 5, desc: 'The speed (in mm/s) when moving from a horizontal_move_z position to a probe_height position. The default is 5.'}
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}
+export class ScrewsTiltAdjust {
+  constructor(unused, options={}) {
+    this.name = van.state("bed_screws")
+    this.screw1 =             {value: van.state(undefined), required: true, desc: 'The (X, Y) coordinate of the first bed leveling screw. This is a\nposition to command the nozzle to so that the probe is directly\nabove the bed screw (or as close as possible while still being\nabove the bed). This is the base screw used in calculations. This\nparameter must be provided.'}
+    this.screw1_name =        {value: van.state(undefined), required: false, desc: 'An arbitrary name for the given screw. This name is displayed when\nthe helper script runs. The default is to use a name based upon\nthe screw XY location.'}
+    this.screw2 =             {value: van.state(undefined), required: true, desc: ""}
+    this.screw2_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.screw3 =             {value: van.state(undefined), required: false, desc: ""}
+    this.screw3_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.screw4 =             {value: van.state(undefined), required: false, desc: ""}
+    this.screw4_name =        {value: van.state(undefined), required: false, desc: ""}
+    this.speed =              {value: van.state(undefined), required: false, default: 50, desc: 'The speed (in mm/s) of non-probing moves during the calibration.\nThe default is 50.'}
+    this.horizontal_move_z =  {value: van.state(undefined), required: false, default: 5, desc: 'The height (in mm) that the head should be commanded to move to\njust prior to starting a probe operation. The default is 5.'}
+    this.screw_thread =       {value: van.state(undefined), required: false, default: 0, desc: 'The type of screw used for bed leveling, M3, M4, or M5, and the\nrotation direction of the knob that is used to level the bed.\nAccepted values: CW-M3, CCW-M3, CW-M4, CCW-M4, CW-M5, CCW-M5.\nDefault value is CW-M3 which most printers use. A clockwise\nrotation of the knob decreases the gap between the nozzle and the\nbed. Conversely, a counter-clockwise rotation increases the gap.'}
     for (const p of Object.keys(this)) {
       if (p in options) {
         this[p].value = options[p]
