@@ -207,7 +207,7 @@ export class BedScrews {
 }
 export class ScrewsTiltAdjust {
   constructor(unused, options={}) {
-    this.name = van.state("bed_screws")
+    this.name = van.state("screws_tilt_adjust")
     this.screw1 =             {value: van.state(undefined), required: true, desc: 'The (X, Y) coordinate of the first bed leveling screw. This is a\nposition to command the nozzle to so that the probe is directly\nabove the bed screw (or as close as possible while still being\nabove the bed). This is the base screw used in calculations. This\nparameter must be provided.'}
     this.screw1_name =        {value: van.state(undefined), required: false, desc: 'An arbitrary name for the given screw. This name is displayed when\nthe helper script runs. The default is to use a name based upon\nthe screw XY location.'}
     this.screw2 =             {value: van.state(undefined), required: true, desc: ""}
