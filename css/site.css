@@ -66,6 +66,9 @@ textarea {
 
         summary {
             background-color: hsl(0, 0%, 98%);
+            @media (prefers-color-scheme: dark) {
+                background-color: hsl(0, 0%, 2%);
+            }
             border-radius: 10px;
             padding: 5px 10px;
             & > * {
