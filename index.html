@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Klipper Configuration Assistant</title>
   <link rel="stylesheet" href="css/pico.classless.amber.css">
+  <link rel="stylesheet" href="css/site.css">
   <style>
     input:invalid:required {
       background-color: oklch(0.9235 0.0444 23.29);
@@ -11,12 +12,7 @@
     form {
       margin: 1rem 10ch;
     }
-    [data-tooltip]:before {
-      max-width: min(450px, 80vw);
-      width: max-content;
-      white-space: normal;
-      word-wrap: break-word;
-    }
+
   </style>
 </head>
 <body>
@@ -26,9 +22,7 @@
     </a></h1>
 
   </header>
-  <details open id="printer-cfg" style="border: 3px solid black; margin: 10px; padding: 10px; border-radius: 10px;">
-    <summary><code style="color: var(--pico-color);">printer.cfg</code></summary>
-  </details>
+  <div id="config-file"></div>
   <dialog id="add_edit_block">
     <select id="block_type">
       <option>Mcu</option>
@@ -44,68 +38,36 @@
   const add_edit_block = one("#add_edit_block")
 
   import van from "./js/frameworks/van-1.5.5.js"
-  import {Pinout} from "./js/classes/pinout.js"
+  import * as BlockDefs from "./js/classes/config_blocks.js"
   import {Modal} from './js/components/modal.js'
-  import {Mcu, Printer, Stepper, Extruder, HeaterBed} from './js/classes/config_blocks.js'
-  import {ConfigBlock} from './js/components/config_block.js'
+  import {Toast} from './js/components/toast.js'
+  import {ConfigFile} from './js/components/config_file.js'
   import {mcu_pinouts} from './js/data/mcus.js'
   const { button } = van.tags
+
+
+  const toast_info = van.state({message: undefined, type: undefined})
+  van.add(document.body, Toast(toast_info))
+
+
 
   const validate = (o)=>{
     for (const p of Object.keys(o)) {
       if (o[p].value === undefined && o[p].required === true) return false
     }
   }
-  const config_block =(o)=>{
-    let s = `[${o.name.val}]`
-    for (const p of Object.keys(o).filter(k=>k!=="name")) {
-      if (o[p].value.val !== undefined) {
-        s = `${s}\n  ${p}: ${o[p].value.val}`
-      }
-    }
-    return s
-  }
 
-  let printer = new Printer()
-  let stepper_x = new Stepper('stepper_x', {step_pin: 'gpio17', homing_speed: '53'})
-  let mcu = new Mcu('rp2040')
-
-  function add_section(e) {
-    const idx = e.target.dataset.idx
-    console.log(idx)
-    add_edit_block.showModal();
-  }
-
-
-  let config_blocks = [
-    printer,
-    mcu,
-    stepper_x
-  ]
-
-  const show_modal = van.state(false)
-  const modal_info = van.state({title: "", body: ""})
-
-  van.add(document.body, Modal(show_modal, modal_info))
-
-  // van.add(one("#printer-cfg"), button({onclick: ()=>{
-  //   const config_block_str = config_blocks.map(b=>config_block(b)).join("\n")
-  //   navigator.clipboard.writeText(config_block_str)
-  //   console.log(config_block_str)
-  // }}, "Copy"))
-  van.add(one("#printer-cfg"), button({onclick: ()=>{
-    show_modal.val = true
-    const code_block_str = config_blocks.map(b=>config_block(b)).join("\n")
-    console.log(code_block_str)
-    modal_info.val = {title: "config file", body: code_block_str}
-  }}, "Show cfg file"))
-
-  config_blocks.forEach(
-    b=>van.add(one("#printer-cfg"), ConfigBlock(b, mcu_pinouts.ldo_leviathan))
+  const config_block_str = van.state(undefined)
+  van.add(
+    one("#config-file"),
+    ConfigFile(
+      van.state("printer.cfg"),
+      config_block_str,
+      mcu_pinouts
+    )
   )
-  // van.add(document.body, ConfigBlock(mcu, mcu_pinouts.ldo_leviathan))
-  // van.add(document.body, ConfigBlock(stepper_x, mcu_pinouts.ldo_leviathan))
+  van.derive(()=>console.log(`${config_block_str.val}`))
 
-  console.log(config_block(mcu))
+
 </script>
 </body>

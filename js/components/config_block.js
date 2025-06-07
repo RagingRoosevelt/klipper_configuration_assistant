@@ -1,96 +1,112 @@
 import van from "../frameworks/van-1.5.5.js"
-const { button, details, div, form, input, label, option, section, select, span, summary } = van.tags
+const { details, div, form, input, label, option, optgroup, select, summary, textarea } = van.tags
+import { INPUT_TYPE } from "../classes/config_blocks.js"
 
+export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, input_type, options) => {
+  // console.log(label_str, input_var, options)
+  const uuid = self.crypto.randomUUID()
+  const input_label_name = `${label_str}-${uuid}`
+
+  const elem_lbl = label(
+    {
+      for: input_label_name,
+      ...(tooltip_str?{"data-tooltip": tooltip_str, "data-placement":"right"}:{})
+    },
+    van.derive(()=>`${label_str}`)
+  )
+  let elem_inpt
+
+  console.log(label_str, input_type)
+  if (options !== undefined || input_type===INPUT_TYPE.SELECT) {
+    elem_inpt = select(
+      {
+        onchange: (e) => input_var.val = (e.target.value!=="")?e.target.value:undefined,
+        name: input_label_name
+      },
+      ...options.map(
+        (o)=>o.group?
+          optgroup({label: `${o.group}`})
+          :option({value: o.value||o.text}, o.text||o.value)
+      )
+    )
+  } else if (input_type === INPUT_TYPE.MULTILINE) {
+    elem_inpt = textarea(
+      {
+        onchange: (e) => input_var.val = (e.target.value !== "")?e.target.value:undefined,
+        name: input_label_name,
+        value: `${input_var.val||required?"--required--":""}`,
+        cols: 10,
+        rows: 6,
+
+      }
+    )
+  }else {
+    elem_inpt = input(
+      {
+        onchange: (e) => input_var.val = e.target.value,
+        required: required,
+        name: input_label_name,
+      },
+      `${input_var.val}`
+      )
+  }
+
+
+  return div(
+    {
+      class: ["config-block-item", ...(required?["required"]:[])].join(" ")
+    },
+    elem_lbl,
+    elem_inpt,
+  )
+}
 
 // todo: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 export const ConfigBlock = (o, pinouts={}) => {
-  console.log(pinouts['stepper'])
+  pinouts = pinouts.ldo_leviathan
+  // console.log("data in config_block.js", o)
   let properties = []
-  for (const k of Object.keys(o).filter((key)=>key!=="name")) {
-    const tooltip = o[k].desc?{"data-tooltip": o[k].desc}:{}
-    let input_elem;
-    if (o[k].options) {
-      input_elem = select(
-        {
-          required: o[k].required,
-          value: null,
-          onchange: (e) => o[k].value.val = e.target.value
-        },
-        option(o[k].required?"--required--":""),
-        o[k].options.map(v=>option({"data-value": v},v))
-      )
-    } else if (o[k].pin_type) {
-      const pin_type_key = o[k].pin_type.split(".")[0]
-      let select_options;
+  const required_props = Object.keys(o).filter((key)=>(key!=="name" && o[key].required))
+  const optional_props = Object.keys(o).filter((key)=>(key!=="name" && !o[key].required))
+  for (const k of Array.prototype.concat(required_props, optional_props)) {
 
-      if (pin_type_key === "stepper") {
-        const stepper_pin = o[k].pin_type.split(".")[1]
-        select_options = pinouts.stepper.map(v=>option({value:v[stepper_pin]}, `${v[stepper_pin]} - ${v.name}`))
-      } else {
-        select_options = pinouts[pin_type_key].map(v=>option({value:v.pin}, `${v.pin} - ${v.name}`))
-      }
 
-      input_elem = select(
-        {
-          required: o[k].required,
-          value: null,
-          onchange: (e) => o[k].value.val = e.target.value
-        },
-        option(o[k].required?"--required--":""),
-        select_options
-      )
-    } else  {
-      input_elem = input({
-        id: `${o.name.val.replace(" ","_")}-${k}`,
-        style: "width: auto; height: calc(1rem * var(--pico-line-height) + var(--pico-border-width) * 2);",
-        value: o[k].value.val===undefined?"":o[k].value,
-        type: "text",
-        oninput: e=> o[k].value.val = e.target.value===""?undefined:e.target.value,
-        required: o[k].required
-      })
+    let show_property = false
+    if (
+      o[k].shown === undefined
+      || o[k].shown === true
+    ) {
+      // console.log("We should show this...")
+      show_property = true
     }
-    properties.push(div(
-      {style: "padding: 5px;"},
-      label({
-        style: "display: inline-block; width: 20ch;",
-        for:`${o.name.val.replace(" ","_")}-${k}`,
-        ...tooltip
-      }, k),
-      // todo: need CSS for :invalid:required
-      input_elem
-    ))
-  }
+    // console.log(k, show_property, o[k].shown, o[k])
 
-
-
-
-  let name_input = []
-  if (o.name.val.split(" ")[0] === "mcu") {
-    name_input.push(
-      div(
-        label({style: "display: inline-block; width: 20ch;", "data-tooltip": "Leave blank for primary MCU"}, "MCU name"),
-        input({
-          style: "width: auto; height: calc(1rem * var(--pico-line-height) + var(--pico-border-width) * 2);",
-          value: o.name.val.split(" ")[1],
-          oninput: (e)=>o.name.val = (
-            e.target.value!==""?`${o.name.val.split(" ")[0]} ${e.target.value}`:o.name.val.split(" ")[0]
-          )
-        })
+    if (show_property) {
+      let input_options = undefined
+      if (o[k].options){
+        if (o[k].required) {
+          input_options = [{text: "--required--"}, ...o[k].options]
+        } else {
+          input_options = [{text: ""}, ...o[k].options]
+        }
+      }
+      properties.push(
+        ConfigBlockItem(
+          o[k].value,
+          k,
+          o[k].desc,
+          o[k].required,
+          o[k].input_type||"TEXT",
+          input_options
+        )
       )
-    )
+    }
   }
 
 
-  return details(
-    {
-      open: true,
-      style: "border: 1px dashed black; margin: 10px; padding: 10px; border-radius: 10px;"
-    },
-    summary(van.derive(() => `[${o.name.val}]`)),
-    ...name_input,
-    form(
-      {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
-      ...properties
-    )
+  return form(
+    {class: "grid",},
+    // {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
+    ...properties
   )
 }

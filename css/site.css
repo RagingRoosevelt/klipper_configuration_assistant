@@ -1,0 +1,172 @@
+
+:root {
+    --pico-line-height: 1.2;
+    --pico-border-radius: 0.5rem;
+    --pico-spacing: 0.25rem;
+}
+
+
+.hidden {
+    visibility: hidden;
+}
+
+.grid {
+    /* https://chriskirknielsen.com/blog/css-grid-with-a-preferred-column-count/ */
+    --_cols: max(1, var(--cols, 3)); /* Ideal number of columns is 3 by default; at least one! */
+    --_gap: var(--gap, 2.5rem); /* Space between each logo */
+    --_min: var(--min, 300px); /* Logos must be at least this wide */
+    --_max: var(--max, 450px); /* Logos cannot be wider than this size */
+    display: grid;
+    gap: var(--_gap);
+    grid-template-columns: repeat(auto-fill, minmax(max(var(--_min), calc((100% - var(--_gap) * (var(--_cols) - 1)) / var(--_cols))), 1fr));
+}
+
+textarea {
+    vertical-align: top;
+}
+
+.app-modal {
+    flex-direction: column;
+    max-width: 600px;
+    width: 80vw;
+    max-height: 1000px;
+    code {
+        width: 100%;
+        overflow-y: scroll;
+    }
+}
+
+.app-modal h1, .config-file summary > * {
+    font-family: monospace;
+}
+
+.config-file {
+    border: 3px solid black;
+    border-radius: 10px;
+
+    summary::after {
+        translate: 0 calc(-1rem * var(--pico-line-height));
+    }
+
+    /* For ConfigBlock and ConfigBlockItem components: config_block.js */
+    .config-block {
+        /* --pico-line-height: 1; */
+        --number-of-columns: calc(floor(100% / 400px));
+        --pico-font-size: 0.75rem;
+        border: 1px dashed black;
+        margin: 10px;
+        /* padding: 10px; */
+        border-radius: 10px;
+        label, select, input {
+            padding: 0 var(--pico-form-element-spacing-horizontal);
+            display: inline-block;
+            width: auto;
+            height: unset;
+        }
+
+        summary {
+            background-color: hsl(0, 0%, 98%);
+            border-radius: 10px;
+            padding: 5px 10px;
+            & > * {
+                margin: 0;
+                font-size: 1.25rem;
+            }
+        }
+        &[open] summary {
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+
+        form {
+            --cols: 4;
+            --gap: 0.5rem;
+        }
+        & .config-block-item {
+            select, input, textarea {
+                float: right;
+            }
+            input {
+                max-width: 10ch;
+            }
+            input:is([name^="serial"],[name^="canbus_uuid"]) {
+                max-width: 30ch;
+            }
+            textarea {
+                display: inline-block;
+            }
+            &.required::before {
+                content: "*";
+                color: red;
+            }
+        }
+        [data-tooltip]:before {
+            max-width: min(450px, 50vw);
+            width: max-content;
+            /* white-space: pre; */
+            white-space: pre-wrap;
+        }
+    }
+}
+
+/* For toast component: toast.js */
+.toast {
+    max-width: 350px;
+    z-index: 1000;
+    padding: 10px;
+    border-radius: 10px;
+    position: fixed;
+    color: #000;
+    box-shadow: 3px 3px 10px hsl(0 0% 0% / 0.6);
+    overflow: visible;
+    &.warning {
+        background-color: hsl(35 100% 65%);
+    }
+    &.error {
+        background-color: hsl(0 100% 65%);
+    }
+    &.info {
+        background-color: hsl(50 100% 65%);
+    }
+    &.top-right {
+        right: 10px;
+        top: 10px;
+        transition: top 0.25s;
+        &.hidden {
+            top: -100px;
+        }
+    }
+    &.top-left {
+        top: 10px;
+        left: 10px;
+        transition: top 0.25s;
+        &.hidden {
+            top: -100px;
+        }
+    }
+    &.bottom-left {
+        left: 10px;
+        bottom: 10px;
+        transition: bottom 0.25s;
+        &.hidden {
+            bottom: -100px;
+        }
+    }
+    &.bottom-right {
+        right: 10px;
+        bottom: 10px;
+        transition: bottom 0.25s;
+        &.hidden {
+            bottom: -100px;
+        }
+    }
+    button {
+        margin-left: 10px;
+        float: right;
+        position: relative;
+        /* top: 0;
+        right: 0; */
+        /* display: block; */
+    }
+}
