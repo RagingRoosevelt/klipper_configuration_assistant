@@ -5,6 +5,11 @@
     --pico-spacing: 0.25rem;
 }
 
+header img {
+    @media (prefers-color-scheme: dark) {
+        filter: invert();
+    }
+}
 
 .hidden {
     visibility: hidden;
