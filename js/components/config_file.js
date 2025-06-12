@@ -96,7 +96,7 @@ export const ConfigFile = (filename, file_str, pinouts) => {
                     },
                     {}
                 ),
-            open: (block_type === "Extruder"),
+            open: (block_type === "Extruder")||true,
         }
 
         const data = (block_type === "Mcu")?new Block(""):new Block("--required--")
