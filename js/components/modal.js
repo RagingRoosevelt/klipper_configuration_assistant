@@ -11,18 +11,22 @@ export const Modal = (show, title, body) => {
     {
       open: van.derive(()=>show.val),
       style: "flex-direction: column",
+      onclick: (e) => {
+        console.log(e.target, e.currentTarget)
+        if (e.target === e.currentTarget) {
+          show.val = false
+        }
+      }
     },
     div(
       {
         class: "app-modal"
       },
       h1(van.derive(()=>title.val)),
-      div(
         code(
           {style: "white-space: pre;"},
           van.derive(()=>body.val)
-        )
-      ),
+        ),
       div(
         button({onclick: ()=>{
           toast_info.val = {

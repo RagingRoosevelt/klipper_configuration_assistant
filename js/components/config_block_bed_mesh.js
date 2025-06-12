@@ -5,7 +5,7 @@ const { details, summary, div, label, input, select, option } = van.tags
 export const ConfigBlockBedMesh = (cfg_blk, options, ) => {
     return details(
         {
-            class: "config-block bed-level",
+            class: "config-block bed_mesh",
             open: options.open!==undefined?options.open:true,
         },
         summary(van.derive(()=>{

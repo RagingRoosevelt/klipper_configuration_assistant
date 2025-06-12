@@ -7,6 +7,7 @@ import {Toast} from './toast.js'
 import {ConfigBlock} from './config_block.js'
 import {ConfigBlockMcu} from './config_block_mcu.js'
 import {ConfigBlockStepper} from './config_block_stepper.js'
+import {ConfigBlockExtruder} from './config_block_extruder.js'
 import {ConfigBlockPrinter} from './config_block_printer.js'
 import {ConfigBlockBedLevel} from './config_block_bed_level.js'
 import {ConfigBlockBedTilt} from './config_block_bed_tilt.js'
@@ -15,6 +16,8 @@ import {ConfigBlockBedScrews} from './config_block_bed_screws.js'
 import {ConfigBlockScrewsTiltAdjust} from './config_block_screws_tilt_adjust.js'
 import {ConfigBlockZTilt} from './config_block_z_tilt.js'
 import {mcu_pinouts} from '../data/mcus.js'
+import {ConfigBlockQuadGantryLevel} from "./config_block_quad_gantry_level.js"
+import { ConfigBlockZThermalAdjust } from "./config_block_z_thermal_adjust.js"
 const { details, div, form, input, label, option, optgroup, select, summary, h1, button } = van.tags
 
 
@@ -28,9 +31,16 @@ export const ConfigFile = (filename, file_str, pinouts) => {
         for (const [prop_key, prop] of Object.entries(block).filter(([k,p])=>k!=="name")) {
             // console.log(prop_key, prop)
             if (prop.value.val !== undefined) {
-            s = `${s}\n  ${prop_key}: ${prop.value.val}`
+                s = `${s}\n${prop_key}: ${prop.value.val}`
+            } else if (prop.value.val === undefined && prop.required) {
+                s = `${s}\n${prop_key}: --required--`
+            }
+
+            if (prop.desc !== undefined && (prop.value.val !== undefined || prop.required)) {
+                s = `${s}\n  # ${prop.desc.replaceAll("\n","\n  # ")}`
             }
         }
+            s = `${s}\n`
         }
         return s
     }
@@ -40,8 +50,13 @@ export const ConfigFile = (filename, file_str, pinouts) => {
         title: van.state(""),
         body: van.state(""),
     }
+    document.addEventListener("keydown", (e)=>{
+        if (e.key === "Escape") {
+            modal_info.show.val = false
+        }
+    })
 
-    van.derive(()=>console.log(modal_info.show.val, modal_info.title.val, modal_info.body.val))
+    // van.derive(()=>console.log(modal_info.show.val, modal_info.title.val, modal_info.body.val))
 
 
     let config_block_instances = []
@@ -51,10 +66,17 @@ export const ConfigFile = (filename, file_str, pinouts) => {
         [BlockDefs.Printer, ConfigBlockPrinter],
         [BlockDefs.Mcu, ConfigBlockMcu],
         [BlockDefs.Stepper, ConfigBlockStepper],
+        [BlockDefs.Extruder, ConfigBlockExtruder],
         // [BlockDefs.BedMesh, ConfigBlockBedMesh],
         [BlockDefs.BedTilt, ConfigBlockBedTilt],
         [BlockDefs.BedScrews, ConfigBlockBedScrews],
         [BlockDefs.ScrewsTiltAdjust, ConfigBlockScrewsTiltAdjust],
+        [BlockDefs.ZTilt, ConfigBlockZTilt],
+        [BlockDefs.QuadGantryLevel, ConfigBlockQuadGantryLevel],
+        [BlockDefs.ZThermalAdjust, ConfigBlockZThermalAdjust],
+        // [BlockDefs.SafeZHome, ConfigBlockSafeZHome],
+        // [BlockDefs.HomingOverride, ConfigBlockHomingOverride],
+        // [BlockDefs.EndstopPhase, ConfigBlockEndstopPhase],
         // [BlockDefs.ZTilt, ConfigBlockZTilt],
     ].entries()) {
         // const [Block, Elem] = Block_Elem
@@ -74,11 +96,15 @@ export const ConfigFile = (filename, file_str, pinouts) => {
                     },
                     {}
                 ),
-            open: false,
+            open: (block_type === "Extruder"),
         }
 
         const data = (block_type === "Mcu")?new Block(""):new Block("--required--")
-        const elem = (block_type === "Mcu")?Elem(data, elem_options, (new_mcu)=>changed_mcu_selection(idx, new_mcu)):Elem(data, elem_options)
+        const elem = (
+            (block_type === "Mcu")?
+                Elem(data, elem_options, (new_mcu)=>changed_mcu_selection(idx, new_mcu))
+                :Elem(data, elem_options)
+        )
 
         block_data.push(data)
 

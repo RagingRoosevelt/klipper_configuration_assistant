@@ -5,7 +5,7 @@ const { details, summary, div, label, input, select, option, h2 } = van.tags
 export const ConfigBlockScrewsTiltAdjust = (cfg_blk, options) => {
     return details(
         {
-            class: "config-block bed-level",
+            class: "config-block screws_tilt_adjust",
             open: options.open!==undefined?options.open:true,
         },
         summary(h2(van.derive(()=>{

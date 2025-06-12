@@ -1,9 +1,9 @@
 import van from "../frameworks/van-1.5.5.js"
-const { details, div, form, input, label, option, optgroup, select, summary, textarea } = van.tags
+const { details, div, form, input, label, option, optgroup, select, summary, textarea, span } = van.tags
 import { INPUT_TYPE } from "../classes/config_blocks.js"
 
-export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, input_type, options) => {
-  // console.log(label_str, input_var, options)
+export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, input_type, units, checkbox_values, checkbox_options, select_options) => {
+  // TODO: Need to implement checkbox options in order to suppor ! and ^
   const uuid = self.crypto.randomUUID()
   const input_label_name = `${label_str}-${uuid}`
 
@@ -16,14 +16,13 @@ export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, inp
   )
   let elem_inpt
 
-  console.log(label_str, input_type)
-  if (options !== undefined || input_type===INPUT_TYPE.SELECT) {
+  if (select_options !== undefined || input_type===INPUT_TYPE.SELECT) {
     elem_inpt = select(
       {
         onchange: (e) => input_var.val = (e.target.value!=="")?e.target.value:undefined,
         name: input_label_name
       },
-      ...options.map(
+      ...select_options.map(
         (o)=>o.group?
           optgroup({label: `${o.group}`})
           :option({value: o.value||o.text}, o.text||o.value)
@@ -41,20 +40,26 @@ export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, inp
       }
     )
   }else {
-    elem_inpt = input(
+    elem_inpt = span(input(
       {
         onchange: (e) => input_var.val = e.target.value,
         required: required,
         name: input_label_name,
       },
       `${input_var.val}`
-      )
+    ),
+     (units!==undefined)?span({style: "float: right;"},units):null
+  )
   }
 
 
   return div(
     {
-      class: ["config-block-item", ...(required?["required"]:[])].join(" ")
+      class: [
+        "config-block-item",
+        ...(required?["required"]:[]),
+        ...(label_str.length>20?["long-label"]:[]),
+      ].join(" ")
     },
     elem_lbl,
     elem_inpt,
@@ -63,8 +68,6 @@ export const ConfigBlockItem = (input_var, label_str, tooltip_str, required, inp
 
 // todo: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select
 export const ConfigBlock = (o, pinouts={}) => {
-  pinouts = pinouts.ldo_leviathan
-  // console.log("data in config_block.js", o)
   let properties = []
   const required_props = Object.keys(o).filter((key)=>(key!=="name" && o[key].required))
   const optional_props = Object.keys(o).filter((key)=>(key!=="name" && !o[key].required))
@@ -76,10 +79,8 @@ export const ConfigBlock = (o, pinouts={}) => {
       o[k].shown === undefined
       || o[k].shown === true
     ) {
-      // console.log("We should show this...")
       show_property = true
     }
-    // console.log(k, show_property, o[k].shown, o[k])
 
     if (show_property) {
       let input_options = undefined
@@ -97,6 +98,9 @@ export const ConfigBlock = (o, pinouts={}) => {
           o[k].desc,
           o[k].required,
           o[k].input_type||"TEXT",
+          o[k].units,
+          undefined,
+          undefined,
           input_options
         )
       )
@@ -106,7 +110,6 @@ export const ConfigBlock = (o, pinouts={}) => {
 
   return form(
     {class: "grid",},
-    // {style: "display: flex; flex-direction: row; flex-wrap: wrap;"},
     ...properties
   )
 }
