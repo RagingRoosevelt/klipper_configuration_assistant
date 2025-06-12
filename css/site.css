@@ -30,6 +30,17 @@ textarea {
     vertical-align: top;
 }
 
+input::placeholder, textarea::placeholder {
+    color: hsl(from currentColor h s 80%)
+}
+input:invalid:required, textarea:invalid:required {
+    background-color: oklch(0.9235 0.0444 23.29);
+    &::placeholder {
+        font-weight: var(--pico);
+        color: hsl(0, 100%, 50%);
+    }
+}
+
 body:has(dialog:hover){
     overflow-y: hidden;
 }
@@ -70,6 +81,10 @@ dialog {
         translate: 0 calc(-1rem * var(--pico-line-height));
     }
 
+    form {
+      margin: 1rem 10ch;
+    }
+
     /* For ConfigBlock and ConfigBlockItem components: config_block.js */
     .config-block {
         /* --pico-line-height: 1; */
@@ -103,6 +118,11 @@ dialog {
             border-bottom-left-radius: 0;
         }
 
+        &.gcode_macro input[name^="description"],
+        &.mcu input[name^="serial"],
+        &.mcu input[name^="canbus_uuid"] {
+            max-width: 25ch;
+        }
 
         form {
             --cols: 4;
@@ -129,9 +149,6 @@ dialog {
             }
             input {
                 max-width: 10ch;
-            }
-            input:is([name^="serial"],[name^="canbus_uuid"]) {
-                max-width: 30ch;
             }
             textarea {
                 display: inline-block;

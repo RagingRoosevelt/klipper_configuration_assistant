@@ -24,6 +24,7 @@ export const ConfigBlockGcodeMacro = (o, options, mcu_selection_callback) => {
         div(
             label("Macro name"),
             input({
+              required: true,
               value: (macro_name_input_value.val!==undefined)?macro_name_input_value.val:"",
               oninput: (e)=>macro_name_input_value.val = e.target.value
             })
