@@ -274,4 +274,17 @@ export class ZTilt {
     }
   }
 }
+export class GcodeMacro {
+  constructor(name, options={}) {
+    this.name = van.state(name||"gcode_macro")
+    this.gcode = {value: van.state(undefined), required: true, input_type: INPUT_TYPE.MULTILINE, desc: 'A list of G-Code commands to execute in place of "my_cmd". See\ndocs/Command_Templates.md for G-Code format. This parameter must\nbe provided.'}
+    this.rename_existing = {value: van.state(undefined), required: false, desc: 'This option will cause the macro to override an existing G-Code\ncommand and provide the previous definition of the command via the\nname provided here. This can be used to override builtin G-Code\ncommands. Care should be taken when overriding commands as it can\ncause complex and unexpected results. The default is to not\noverride an existing G-Code command.'}
+    this.description = {value: van.state(undefined), required: false, default: "G-Code macro", desc: 'This will add a short description used at the HELP command or while\nusing the auto completion feature. Default "G-Code macro"'}
+    for (const p of Object.keys(this)) {
+      if (p in options) {
+        this[p].value = options[p]
+      }
+    }
+  }
+}
 

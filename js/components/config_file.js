@@ -18,6 +18,7 @@ import {ConfigBlockZTilt} from './config_block_z_tilt.js'
 import {mcu_pinouts} from '../data/mcus.js'
 import {ConfigBlockQuadGantryLevel} from "./config_block_quad_gantry_level.js"
 import { ConfigBlockZThermalAdjust } from "./config_block_z_thermal_adjust.js"
+import { ConfigBlockGcodeMacro } from "./config_block_gcode_macro.js"
 const { details, div, form, input, label, option, optgroup, select, summary, h1, button } = van.tags
 
 
@@ -26,20 +27,25 @@ export const ConfigFile = (filename, file_str, pinouts) => {
     const config_block_str = (config_block_list)=>{
         let s = ""
         for (const block of Object.values(config_block_list)) {
-        s = `${s}\n[${block.name.val}]`
-        // console.log(Object.entries(block).filter(([k,p])=>k!=="name"))
-        for (const [prop_key, prop] of Object.entries(block).filter(([k,p])=>k!=="name")) {
-            // console.log(prop_key, prop)
-            if (prop.value.val !== undefined) {
-                s = `${s}\n${prop_key}: ${prop.value.val}`
-            } else if (prop.value.val === undefined && prop.required) {
-                s = `${s}\n${prop_key}: --required--`
-            }
+            s = `${s}\n[${block.name.val}]`
+            // console.log(Object.entries(block).filter(([k,p])=>k!=="name"))
+            for (const [prop_key, prop] of Object.entries(block).filter(([k,p])=>k!=="name")) {
+                // console.log(prop_key, prop)
+                if (prop_key === "gcode") {
+                    s = `${s}\n${prop_key}:`
+                    if (prop.value.val !== undefined) {
+                        s = `${s}\n  ${prop.value.val.split("\n").join("\n  ")}`
+                    }
+                } else if (prop.value.val !== undefined) {
+                    s = `${s}\n${prop_key}: ${prop.value.val}`
+                } else if (prop.value.val === undefined && prop.required) {
+                    s = `${s}\n${prop_key}: --required--`
+                }
 
-            if (prop.desc !== undefined && (prop.value.val !== undefined || prop.required)) {
-                s = `${s}\n  # ${prop.desc.replaceAll("\n","\n  # ")}`
+                if (prop.desc !== undefined && (prop.value.val !== undefined || prop.required)) {
+                    s = `${s}\n  # ${prop.desc.replaceAll("\n","\n  # ")}`
+                }
             }
-        }
             s = `${s}\n`
         }
         return s
@@ -74,6 +80,7 @@ export const ConfigFile = (filename, file_str, pinouts) => {
         [BlockDefs.ZTilt, ConfigBlockZTilt],
         [BlockDefs.QuadGantryLevel, ConfigBlockQuadGantryLevel],
         [BlockDefs.ZThermalAdjust, ConfigBlockZThermalAdjust],
+        [BlockDefs.GcodeMacro, ConfigBlockGcodeMacro],
         // [BlockDefs.SafeZHome, ConfigBlockSafeZHome],
         // [BlockDefs.HomingOverride, ConfigBlockHomingOverride],
         // [BlockDefs.EndstopPhase, ConfigBlockEndstopPhase],
