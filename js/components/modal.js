@@ -28,6 +28,7 @@ export const Modal = (show, title, body) => {
           van.derive(()=>body.val)
         ),
       div(
+        {class: "controls"},
         button({onclick: ()=>{
           toast_info.val = {
             message: "Copied to clipboard",

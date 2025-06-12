@@ -30,15 +30,30 @@ textarea {
     vertical-align: top;
 }
 
-.app-modal {
-    flex-direction: column;
-    max-width: 600px;
-    width: 80vw;
-    max-height: 70vh;
-    code {
-        width: 100%;
-        height: 100%;
-        overflow: scroll;
+body:has(dialog:hover){
+    overflow-y: hidden;
+}
+dialog {
+    overscroll-behavior: contain;
+    & .app-modal {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-width: 800px;
+        width: 95vw;
+        height: 90vh;
+        max-height: 800px;
+        code {
+            width: 100%;
+            height: 100%;
+            overflow: scroll;
+        }
+        .controls {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 5px;
+        }
     }
 }
 
