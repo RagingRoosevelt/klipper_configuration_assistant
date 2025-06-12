@@ -27,5 +27,31 @@ export const prepare_pin_options = (pin_type, pinouts) => {
 }
 
 
-export const prepare_generic_options = () => {
+export const config_block_str = (config_block_list, include_comments=true)=>{
+    let s = ""
+    for (const block of Object.values(config_block_list)) {
+        s = `${s}\n[${block.name.val}]`
+        for (const [prop_key, prop] of Object.entries(block).filter(([k,p])=>k!=="name")) {
+            if (prop_key === "gcode") {
+                s = `${s}\n${prop_key}:`
+                if (prop.value.val !== undefined) {
+                    s = `${s}\n  ${prop.value.val.split("\n").join("\n  ")}`
+                }
+            } else if (prop.value.val !== undefined) {
+                s = `${s}\n${prop_key}: ${prop.value.val}`
+            } else if (prop.value.val === undefined && prop.required) {
+                s = `${s}\n${prop_key}: --required--`
+            }
+
+            if (
+              include_comments
+              && prop.desc !== undefined
+              && (prop.value.val !== undefined || prop.required)
+            ) {
+                s = `${s}\n  # ${prop.desc.replaceAll("\n","\n  # ")}`
+            }
+        }
+        s = `${s}\n`
+    }
+    return s
 }

@@ -1,7 +1,7 @@
 import van from "../frameworks/van-1.5.5.js"
 import * as BlockDefs from "../classes/config_blocks.js"
 import {Pinout} from "../classes/pinout.js"
-import {Modal} from './modal.js'
+import {Modal} from './modal_show_config.js'
 import {Mcu, Printer, Stepper, Extruder, HeaterBed} from '../classes/config_blocks.js'
 import {Toast} from './toast.js'
 import {ConfigBlock} from './config_block.js'
@@ -152,7 +152,7 @@ export const ConfigFile = (filename, file_str, pinouts) => {
             )
         ),
         ...config_block_instances,
-        Modal(modal_info.show, modal_info.title, modal_info.body)
+        Modal(modal_info.show, modal_info.title, block_data)
     )
 
 }
