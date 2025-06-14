@@ -1,0 +1,317 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>led_effect Simulator</title>
+  <link rel="stylesheet" href="css/pico.classless.amber.css">
+  <link rel="stylesheet" href="css/site.css">
+  <style>
+    .led {
+        border-radius: 50%;
+        /* background-color: attr(color type(<color>), #000); */
+        background-color: var(--bgcolor, #fff);
+        height: 1rem;
+        width: 1rem;
+        cursor: copy;
+        box-sizing: border-box;
+        border: 1px dashed #444;
+    }
+    .led-display {
+        padding: 10px;
+        background-color: #000;
+        display: grid;
+        grid-auto-flow: column;
+        gap: 0;
+        grid-template-rows: repeat(var(--grid-row-count), 1rem);
+        justify-content: left;
+    }
+    button {
+        &[state="0"] {
+            background-color: var(--pico-muted-color);
+            border-color: var(--pico-muted-border-color);
+        }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><code>led_effect</code> Simulator <a data-tooltip="Github repository" data-placement="bottom" href="https://github.com/RagingRoosevelt/klipper_configuration_assistant" target="_blank" aria-label="Link to github repository, opens in new tab.">
+      <img width="28px" src="./img/icons/github.svg" alt="github icon">
+    </a></h1>
+
+  </header>
+
+<script type="module">
+  const all = document.querySelectorAll.bind(document)
+  const one = document.querySelector.bind(document)
+  const add_edit_block = one("#add_edit_block")
+
+  import van from "./js/frameworks/van-1.5.5.js"
+  import * as BlockDefs from "./js/classes/config_blocks.js"
+  import {Modal} from './js/components/modal.js'
+  import {Toast} from './js/components/toast.js'
+  import {ConfigFile} from './js/components/config_file.js'
+  import {mcu_pinouts} from './js/data/mcus.js'
+  const { button, details, summary, div, label, input, select, option, h2, code, textarea } = van.tags
+
+  const Led = (c, options={}) => {
+    const r_pct = van.state(`${c.val[0]*100}`)
+    const g_pct = van.state(`${c.val[1]*100}`)
+    const b_pct = van.state(`${c.val[2]*100}`)
+
+    van.derive(()=>{
+        r_pct.val = `${c.val[0]*100}`
+        g_pct.val = `${c.val[1]*100}`
+        b_pct.val = `${c.val[2]*100}`
+    })
+
+    return div(
+        {
+            class: "led",
+            style: van.derive(()=>`--bgcolor: rgb(${r_pct.val}% ${g_pct.val}% ${b_pct.val}%)`),
+            // "data-tooltip": van.derive(()=>`(${Math.round(c.val[0]*1000)/1000}, ${Math.round(c.val[1]*1000)/1000}, ${Math.round(c.val[2]*1000)/1000})`),
+            onclick: ()=>navigator.clipboard.writeText(`(${Math.round(c.val[0]*1000)/1000}, ${Math.round(c.val[1]*1000)/1000}, ${Math.round(c.val[2]*1000)/1000})`)
+        }
+    )
+  }
+  const led_display = (led_array, options={}) => {
+    return div(
+        {
+            class: "led-display",
+            style: van.derive(()=>`--grid-row-count: ${options.row_count.val||1};`),
+        },
+        ...led_array.map(c=>Led(c))
+    )
+  }
+
+  const control_item = (name, variable, options={}) => {
+    if (options.type==="button") {
+        return button(
+            {
+                state: van.derive(()=>variable.val?1:0),
+                onclick: ()=>variable.val = variable.val?false:true,
+            },
+            van.derive(()=>`${name}: ${variable.val?1:0}`)
+        )
+    }
+    return div(
+        label({for: `${name}_value`,}, van.derive(()=>`${name}: ${variable.val}`)),
+        input(
+            {
+                name: `${name}_value`,
+                type: options.type || "range",
+                value: variable.val,
+                min: options.min || 0,
+                max: options.max || 100,
+                step: options.step || 1,
+                oninput: (e)=>variable.val = e.target.value
+            }
+        )
+    )
+  }
+
+  const printer = (stepper, heater, progress, analog, endstop, v_button) => {
+    return div(
+        {
+            style: [
+                "display: flex;",
+                "gap: 10px;"
+            ].join(" ")
+        },
+        control_item("Stepper", stepper),
+        control_item("Heater", heater),
+        control_item("Progress", progress),
+        control_item("Analog", analog),
+        control_item("Endstop", endstop, {type: "button"}),
+        control_item("Button", v_button, {type: "button"}),
+    )
+  }
+  const settings = (framerate, chain_length, row_count) => {
+    return div(
+        {
+            style: [
+                "display: flex;",
+                "gap: 10px;"
+            ].join(" ")
+        },
+        control_item("Framerate", framerate, {min: 0, max: 24}),
+        control_item("Chain Length", chain_length, {min:1}),
+        control_item("Row Count", row_count, {min:1}),
+    )
+  }
+
+  const re_pattern = /^\s*(\w+)\s+([.0-9]+)\s+([.0-9]+)\s+(\w+)\s+(.*)\s*$/gmi
+  const get_layer_parts = (line)=>{
+    const matches = line.split(re_pattern)
+    return {
+        type: matches[1],
+        parm1: matches[2],
+        parm2: matches[3],
+        blend: matches[4],
+        palette: (
+            [
+                ...matches[5]
+                .replaceAll(/\s+/g,"")
+                .matchAll(/\(([.0-9]+),([.0-9]+),([.0-9]+)\)/gmi)
+            ].map((v)=>[parseFloat(v[1]),parseFloat(v[2]),parseFloat(v[3])])
+        )
+    }
+  }
+
+  const parse_functions = {
+    static: (s)=>{return (duration, led_array)=>{
+        return led_array.map(()=>s.palette[0])
+    }},
+    linearface: (s)=>{return (duration, led_array)=>{
+
+    }},
+    breathing: (s)=>{return (duration, led_array)=>{
+        // parm1 is the duration of a complete cycle
+        // parm2 is not used
+        // TODO: This color change is out of phase with the breathing.  Is breathing taking 2x as long as it should?
+        const num_colors = s.palette.length
+        const pct_one_cycle = duration/s.parm1 - parseInt(duration/s.parm1)
+        const pct_n_cycles = s.palette.length*((duration)/(s.parm1*s.palette.length) - parseInt((duration)/(s.parm1*s.palette.length)))
+
+
+        const color_idx = Math.floor(pct_n_cycles)
+        let pct = 2 * (0.5 - pct_one_cycle)
+        if (pct < 0) {
+            pct = -pct
+        }
+        // console.log(pct_one_cycle, pct_n_cycles, color_idx)
+        // for (let k=0; k<led_array.length; k++) {
+        //     led_array[k].val = s.palette[color_idx].map(v=>(v*pct))
+        // }
+        return led_array.map((c)=>s.palette[color_idx].map(v=>(v*pct)))
+
+    }},
+    blink: (s)=>{return (duration, led_array)=>{
+        const color_idx = Math.floor(s.palette.length*(duration/(s.parm1*s.palette.length) - parseInt(duration/(s.parm1*s.palette.length))))
+        let pct = (duration/s.parm1 - parseInt(duration/s.parm1))
+        const factor = (pct<s.parm2)?1:0
+        console.log(color_idx, s.parm2, pct, factor)
+        // for (let k=0; k<led_array.length; k++) {
+        //     led_array[k].val = s.palette[color_idx].map(v=>(v*factor))
+        // }
+        return led_array.map(()=>s.palette[color_idx].map(v=>(v*factor)))
+    }},
+    strobe: (s)=>{return (duration, led_array)=>{
+
+    }},
+    twinkle: (s)=>{return (duration, led_array)=>{
+
+    }},
+    gradient: (s)=>{return (duration, led_array)=>{
+
+    }},
+    patten: (s)=>{return (duration, led_array)=>{}},
+    comet: (s)=>{return (duration, led_array)=>{}},
+    chase: (s)=>{return (duration, led_array)=>{}},
+    heater: (s)=>{return (duration, led_array)=>{}},
+    temperature: (s)=>{return (duration, led_array)=>{}},
+    heatergauge: (s)=>{return (duration, led_array)=>{}},
+    temperaturegauge: (s)=>{return (duration, led_array)=>{}},
+    fire: (s)=>{return (duration, led_array)=>{}},
+    heaterfire: (s)=>{return (duration, led_array)=>{}},
+    analogpin: (s)=>{return (duration, led_array)=>{}},
+    stepper: (s)=>{return (duration, led_array)=>{}},
+    steppercolor: (s)=>{return (duration, led_array)=>{}},
+    progress: (s)=>{return (duration, led_array)=>{}},
+    homing: (s)=>{return (duration, led_array)=>{}},
+    switchbutton: (s)=>{return (duration, led_array)=>{}},
+    togglebutton: (s)=>{return (duration, led_array)=>{}},
+    flashbutton: (s)=>{return (duration, led_array)=>{}},
+  }
+  const start_time = new Date()
+  const frame_rate = van.state(2)
+  const row_count = van.state(1)
+  const config_str = van.state("breathing  4 1 top (.5,.5,1),(1,0,0),(0,1,0),(0,0,1)")
+
+  const parse_config = () => {
+    let layer_funcs = []
+    const lines = config_str.val.replaceAll(/[ \t\r]+/gmi, " ").split("\n")
+    for (let line of lines) {
+        const line_parts = get_layer_parts(line)
+        console.log(line_parts)
+        layer_funcs.push(parse_functions[line_parts.type](line_parts))
+    }
+    effect_stack = layer_funcs
+    console.log(effect_stack)
+
+  }
+
+//   parse_layer(layer_str)
+let effect_stack = []
+parse_config()
+
+  const led_array = []
+  for (let k=0; k<30; k++) {
+    led_array.push(van.state([0,0,0]))
+  }
+
+  const tick = () => {
+    const current_duration = elapsed_time()
+    for (let effect of effect_stack){
+        const effect_led_colors = effect(current_duration, led_array)
+        console.log(effect_led_colors)
+        effect_led_colors.forEach((c,idx)=>{
+            led_array[idx].val = c
+        })
+
+    }
+    // for (let k=0; k<30; k++) {
+    //     led_array[k].val = [
+    //       Math.random(),
+    //       Math.random(),
+    //       Math.random()
+    //     ]
+    // }
+  }
+
+
+  const elapsed_time = ()=>((new Date()) - start_time)/1000
+
+
+  let tick_interval = setInterval(tick, 1000/frame_rate.val)
+
+  van.derive(()=>{
+    const new_frame_rate = frame_rate.val
+    clearInterval(tick_interval)
+    if (new_frame_rate > 0) {
+        tick_interval = setInterval(tick, 1000/new_frame_rate)
+    }
+    console.log("Frame rate changed to ", new_frame_rate)
+  })
+
+  van.add(
+    document.body,
+    printer(van.state(0), van.state(0), van.state(0), van.state(0), van.state(0), van.state(0))
+  )
+  van.add(
+    document.body,
+    settings(frame_rate, van.state(0), row_count)
+  )
+  van.add(
+    document.body,
+    led_display(led_array, {row_count: row_count}),
+    textarea(
+        {
+            value: config_str.val,
+            oninput: (e)=>config_str.val=e.target.value,
+            onkeyup: (e)=>console.log("Line number: ", e.target.value.substr(0,textarea.selectionStart).split("\n").length),
+            cols: 20,
+            rows: 10,
+        }
+    ),
+    button(
+        {
+            onclick: parse_config
+        },
+        "Load config"
+    )
+  )
+
+
+</script>
+</body>
