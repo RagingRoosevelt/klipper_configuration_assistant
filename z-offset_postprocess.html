@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Z-offset Gcode Post-Process Tool</title>
+  <link rel="stylesheet" href="css/pico.classless.amber.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header>
+    <h1>Z-offset Gcode Post-Process Tool <a data-tooltip="Github repository" data-placement="bottom" href="https://github.com/RagingRoosevelt/klipper_configuration_assistant/blob/main/z-offset_postprocess.html" target="_blank" aria-label="Link to github repository, opens in new tab.">
+      <img width="28px" src="./img/icons/github.svg" alt="github icon">
+    </a></h1>
+
+  </header>
+  <div id="post-process-config"></div>
+  <div id="g-code-file"></div>
+
+<script type="module">
+  const all = document.querySelectorAll.bind(document)
+  const one = document.querySelector.bind(document)
+  const add_edit_block = one("#add_edit_block")
+
+  import van from "./js/frameworks/van-1.5.5.js"
+  import {Toast} from './js/components/toast.js'
+  const { button, details, summary, div, label, input, select, option, h2, code, textarea } = van.tags
+
+
+  const toast_info = van.state({message: undefined, type: undefined})
+  van.add(document.body, Toast(toast_info))
+
+
+  const Settings = () => {
+
+
+    return div(
+      button("Copy Modified G-Code"),
+      div(
+":"
+      )
+    )
+  }
+
+  const gcode_in = van.state("")
+
+
+  const scan_gcode = (gcode_str) => {
+    const re_exclude_object_start = /EXCLUDE_OBJECT_START NAME=(.+)/gi
+    const re_exclude_object_end = /EXCLUDE_OBJECT_END NAME=(.+)/gi
+
+    let objects = []
+    for (let line of gcode_str.split("\n")) {
+        // console.log(line)
+        const match = line.matchAll(re_exclude_object_start)
+        console.log(match.length, match)
+    }
+  }
+
+  van.derive(()=>{
+    scan_gcode(gcode_in.val)
+  })
+
+
+
+  van.add(
+    one("#post-process-config"),
+    Settings(
+
+    )
+  )
+  van.add(
+    one("#g-code-file"),
+    textarea(
+        {
+            cols: 20,
+            rows: 10,
+            value: van.derive(()=>gcode_in.val),
+            oninput: (e)=>gcode_in.val = e.target.value
+        },
+    )
+  )
+
+
+</script>
+</body>
