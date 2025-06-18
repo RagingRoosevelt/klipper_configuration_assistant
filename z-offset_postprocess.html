@@ -23,43 +23,134 @@
 
   import van from "./js/frameworks/van-1.5.5.js"
   import {Toast} from './js/components/toast.js'
-  const { button, details, summary, div, label, input, select, option, h2, code, textarea } = van.tags
+  const { button, details, summary, div, label, input, select, option, h2, code, textarea, ul, li, span } = van.tags
 
 
   const toast_info = van.state({message: undefined, type: undefined})
   van.add(document.body, Toast(toast_info))
 
+  const z_offset_settings = {
+    initial: van.state(0),
+    increment: van.state(-0.01)
+  }
 
   const Settings = () => {
-
-
     return div(
+      input(
+        {
+          type:"file", 
+          accept: ".gcode,.gcode.3mf",
+          oninput: (e)=>gcode_file_input.val = e.target.files
+        }
+      ),
+      // button({onclick: },"Import from G-Code File"),
       button("Copy Modified G-Code"),
       div(
-":"
+        {
+          role: "group"
+        },
+        label("Initial offset"),
+        input(
+          {
+            type:"number", 
+            step:0.1,
+            value: z_offset_settings.initial.val,
+            oninput: (e)=>z_offset_settings.initial.val = parseFloat(e.target.value)
+          },
+        ),
+      ),
+      div(
+        {
+          role: "group"
+        },
+        label({
+          "data-tooltip": "Negative values cause more squish, positive values cause less squish."
+        }, "Offset increment"),
+        input(
+          {
+            type:"number", 
+            step: 0.005,
+            min: -1,
+            max: 1,
+            value: z_offset_settings.increment.val,
+            oninput: (e)=>z_offset_settings.increment.val = parseFloat(e.target.value)
+          },
+        ),
+      ),
+      div(
+        () => {
+          const object_offsets = []
+          for (let [idx, o] of objects.val.entries()) {
+            object_offsets.push(
+              li(
+                {onclick: ()=>scroll_to_line(o.line_no)},
+                div(`Z-Offset: ${(1000*z_offset_settings.initial.val + 1000*idx*z_offset_settings.increment.val)/1000}`),
+                div(`${o.name}`),
+              )
+            )
+          }
+
+          return ul(
+            ...object_offsets
+          )
+        }
       )
     )
   }
 
   const gcode_in = van.state("")
+  const objects = van.state([])
+  const gcode_file_input = van.state([])
 
 
   const scan_gcode = (gcode_str) => {
+    objects.val = []
     const re_exclude_object_start = /EXCLUDE_OBJECT_START NAME=(.+)/i
     const re_exclude_object_end = /EXCLUDE_OBJECT_END NAME=(.+)/i
+    const re_printing_start = /; printing object (.+)/i
+    const re_printing_stop = /; stop printing object (.+)/i
+    let re_object_start
+    if (re_exclude_object_start.test(gcode_str)) {
+      re_object_start = re_exclude_object_start
+    } else {
+      re_object_start = re_printing_start
+    }
 
-    let objects = []
-    for (let line of gcode_str.split("\n")) {
-        // console.log(line)
-        const match = line.match(re_exclude_object_start)
+    for (let [idx, line] of gcode_str.split("\n").entries()) {
+        const match = line.match(re_object_start)
         if (match){
-            const
+          if (![...objects.val.map((o=>o.name))].includes(match[1]))
+            objects.val.push({name: match[1], line_no: idx})
         }
+    } 
+    console.log(objects)
+  }
+
+  const scroll_to_line = (line_no) => {
+    const ta = one("textarea#gcode-file-contents")
+    const line_height = ta.scrollHeight / ta.value.split("\n").length
+    console.log(ta, line_height, line_no, line_height * line_no)
+    ta.scrollTop = line_height * line_no
+  }
+
+  van.derive(()=>{
+    console.log("new content")
+    scan_gcode(gcode_in.val)
+  })
+
+  const import_from_gcode_file = (file) => {
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        gcode_in.val = reader.result
+      }
+      reader.readAsText(file)
     }
   }
 
   van.derive(()=>{
-    scan_gcode(gcode_in.val)
+    import_from_gcode_file(gcode_file_input.val[0])
+    console.log(objects.val)
   })
 
 
@@ -67,20 +158,25 @@
   van.add(
     one("#post-process-config"),
     Settings(
-
     )
   )
   van.add(
     one("#g-code-file"),
     textarea(
+        // TODO: Use this instead of textarea https://stackoverflow.com/a/41309213
         {
-            cols: 20,
+          style: "margin: 1rem; width: 100%",
+          id: "gcode-file-contents",
             rows: 10,
             value: van.derive(()=>gcode_in.val),
             oninput: (e)=>gcode_in.val = e.target.value
         },
     )
   )
+
+  // TODO: Clean up into components
+  // TODO: Insert z-offset commands: SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1
+  // TODO: Styling
 
 
 </script>
