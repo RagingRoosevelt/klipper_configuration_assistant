@@ -45,14 +45,16 @@
 
 
   const scan_gcode = (gcode_str) => {
-    const re_exclude_object_start = /EXCLUDE_OBJECT_START NAME=(.+)/gi
-    const re_exclude_object_end = /EXCLUDE_OBJECT_END NAME=(.+)/gi
+    const re_exclude_object_start = /EXCLUDE_OBJECT_START NAME=(.+)/i
+    const re_exclude_object_end = /EXCLUDE_OBJECT_END NAME=(.+)/i
 
     let objects = []
     for (let line of gcode_str.split("\n")) {
         // console.log(line)
-        const match = line.matchAll(re_exclude_object_start)
-        console.log(match.length, match)
+        const match = line.match(re_exclude_object_start)
+        if (match){
+            const
+        }
     }
   }
 
