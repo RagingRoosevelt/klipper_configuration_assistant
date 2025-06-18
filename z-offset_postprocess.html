@@ -23,7 +23,7 @@
 
   import van from "./js/frameworks/van-1.5.5.js"
   import {Toast} from './js/components/toast.js'
-  const { button, details, summary, div, label, input, select, option, h2, code, textarea, ul, li, span } = van.tags
+  const { h1, dialog, ol, header, article, p, button, details, summary, div, label, input, select, option, h2, code, textarea, ul, li, span } = van.tags
 
 
   const toast_info = van.state({message: undefined, type: undefined})
@@ -36,6 +36,10 @@
 
   const Settings = () => {
     return div(
+      button(
+        {onclick: ()=>show_help.val = true},
+        "HELP!"
+      ),
       input(
         {
           type:"file", 
@@ -101,6 +105,7 @@
   const gcode_in = van.state("")
   const objects = van.state([])
   const gcode_file_input = van.state([])
+  const show_help = van.state(false)
 
 
   const scan_gcode = (gcode_str) => {
@@ -171,6 +176,38 @@
             value: van.derive(()=>gcode_in.val),
             oninput: (e)=>gcode_in.val = e.target.value
         },
+    )
+  )
+
+  van.add(
+    document.body,
+    dialog(
+      {
+        open: van.derive(()=>show_help.val)
+      },
+      article(
+        header(
+          button({
+            onclick: ()=>show_help.val = false,
+            "aria-label": "Close",rel: "prev"
+          }),
+          h1("Instructions"),
+        ),
+        ol(
+          li("In your slicer, add a cube primative that's 0.2mm thick"),
+          li("Clone the cube 8 times (you should have 9 total)"),
+          li("Rename your cubes 'Cube A' through 'Cube I'"),
+          li("Arrange your cubes so that they're organized on the build plate in an order that you will remember"),
+          li("Make sure your plate is set to per-object print order rather than per-layer"),
+          li("Drag your cubes into alphabetic order in the object list"),
+          li("Scrub through through the slice preview and verify that your cubes will print in the order that you expect"),
+          li("Export your sliced objects as gcode"),
+          li("Import your gcode here"),
+          li("Set your initial Z-Offset and increment and verify that the correct offsets will be inserted into your gcode"),
+          li("Save your modified gcode and print it"),
+          li("Determine which sample had the desired amount of squish and then modify your printer config to incorporate that relative z-offset")
+        )
+      )
     )
   )
 
