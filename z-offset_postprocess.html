@@ -346,7 +346,7 @@ SET_GCODE_OFFSET Z_ADJUST=${increment_offset} MOVE=1  ; total z-offset: ${(1000*
   )
 
   const save_gcode_as_file = () => {
-    const blob = new Blob([gcode_in.val], { type: 'text/plain' });
+    const blob = new Blob([gcode_out.val], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
 
     const filename = gcode_file_input.val[0] ? gcode_file_input.val[0].name : "sample.gcode"
