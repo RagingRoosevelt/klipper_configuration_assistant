@@ -15,7 +15,7 @@ export const ConfigBlockItem = (
   select_options
 ) => {
   // TODO: Need to implement checkbox options in order to suppor ! and ^
-  const uuid = self.crypto.randomUUID()
+  const uuid = globalThis.crypto.randomUUID()
   const input_label_name = `${label_str}-${uuid}`
 
   const elem_lbl = label(
