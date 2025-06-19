@@ -5,6 +5,44 @@
   <title>Z-offset Gcode Post-Process Tool</title>
   <link rel="stylesheet" href="css/pico.classless.amber.css">
   <link rel="stylesheet" href="css/site.css">
+  <style>
+    .object-list {
+        display: flex;
+        gap: 10px;
+        flex-direction: row;
+        /* flex-basis: 10ch; */
+        .object, .existing-offset {
+            display: flex;
+            border-radius: 10px;
+            padding: 5px;
+            border: 3px solid black;
+            /* &>* {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-content: center;
+            } */
+            & > :first-child {
+                border-right: 1px dashed black;
+                padding-right: 5px;
+            }
+            & > :last-child {
+                padding-left: 5px;
+            }
+            .name {
+                font-family: monospace;
+            }
+            .offset-amount {
+                width: 15ch;
+                text-align: initial;
+                :last-child {
+                    float: right;
+                    font-family: monospace;
+                }
+            }
+        }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -36,19 +74,21 @@
 
   const Settings = () => {
     return div(
-      button(
-        {onclick: ()=>show_help.val = true},
-        "HELP!"
-      ),
+        {style: "display: grid; grid-template-columns: repeat(3, 1fr);"},
       input(
         {
-          type:"file", 
+          type:"file",
           accept: ".gcode,.gcode.3mf",
+            style: "grid-column: 1 / 3",
           oninput: (e)=>gcode_file_input.val = e.target.files
         }
       ),
       // button({onclick: },"Import from G-Code File"),
-      button("Copy Modified G-Code"),
+      button(
+        {onclick: ()=>save_gcode_as_file(),
+            style: "",},
+        "Save Modified G-Code"
+    ),
       div(
         {
           role: "group"
@@ -56,7 +96,7 @@
         label("Initial offset"),
         input(
           {
-            type:"number", 
+            type:"number",
             step:0.1,
             value: z_offset_settings.initial.val,
             oninput: (e)=>z_offset_settings.initial.val = parseFloat(e.target.value)
@@ -68,11 +108,12 @@
           role: "group"
         },
         label({
-          "data-tooltip": "Negative values cause more squish, positive values cause less squish."
+          "data-tooltip": "Negative values cause more squish, positive values cause less squish.",
+          "data-placement": "right",
         }, "Offset increment"),
         input(
           {
-            type:"number", 
+            type:"number",
             step: 0.005,
             min: -1,
             max: 1,
@@ -81,17 +122,65 @@
           },
         ),
       ),
+      button(
+        {onclick: ()=>show_help.val = true,
+            style: "",
+        },
+        "HELP!"
+      ),
       div(
+        {
+            style: "grid-column: 1 / -1;",
+            class: "object-list",
+        },
         () => {
           const object_offsets = []
-          for (let [idx, o] of objects.val.entries()) {
-            object_offsets.push(
-              li(
-                {onclick: ()=>scroll_to_line(o.line_no)},
-                div(`Z-Offset: ${(1000*z_offset_settings.initial.val + 1000*idx*z_offset_settings.increment.val)/1000}`),
-                div(`${o.name}`),
-              )
-            )
+
+          if (
+            scan_mode.val === SCAN_MODES.EXCLUDE_OBJECT
+            || scan_mode.val === SCAN_MODES.PRINTING_START
+          ) {
+            for (let [idx, o] of objects.val.entries()) {
+                object_offsets.push(
+                div(
+                    {
+                        class: "object",
+                        role: "button",
+                        onclick: ()=>scroll_to_line(idx, o.line_no),
+                    },
+                    div(
+                        {class: "name"},
+                        `${o.name}`
+                    ),
+                    div(
+                        {class: "offset-amount"},
+                        span('Z-Offset'),
+                        span(`${(1000*z_offset_settings.initial.val + 1000*idx*z_offset_settings.increment.val)/1000}`)
+                    ),
+                )
+                )
+            }
+          } else if (scan_mode.val === SCAN_MODES.EXISTING_OFFSETS) {
+            for (let [idx, o] of existing_z_offsets.val.entries()) {
+                object_offsets.push(
+                div(
+                    {
+                        class: "existing-offset",
+                        role: "button",
+                        onclick: ()=>scroll_to_line(idx, o.line_no),
+                    },
+                    div(
+                        {class: "name"},
+                        `${o.name}`
+                    ),
+                    div(
+                        {class: "offset-amount"},
+                        span('Z-Offset'),
+                        span(`${(1000*z_offset_settings.initial.val + 1000*idx*z_offset_settings.increment.val)/1000}`)
+                    ),
+                )
+                )
+            }
           }
 
           return ul(
@@ -103,44 +192,122 @@
   }
 
   const gcode_in = van.state("")
+  const gcode_out = van.state("")
   const objects = van.state([])
+  const existing_z_offsets = van.state([])
   const gcode_file_input = van.state([])
   const show_help = van.state(false)
-
+  const scan_mode = van.state(undefined)
+  const SCAN_MODES = {
+      EXCLUDE_OBJECT: "EXCLUDE_OBJECT",
+      PRINTING_START: "PRINTING_START",
+      EXISTING_OFFSETS: "EXISTING_OFFSET",
+  }
 
   const scan_gcode = (gcode_str) => {
+
+    scan_mode.val = undefined
+
     objects.val = []
+    existing_z_offsets.val = []
+
     const re_exclude_object_start = /EXCLUDE_OBJECT_START NAME=(.+)/i
     const re_exclude_object_end = /EXCLUDE_OBJECT_END NAME=(.+)/i
     const re_printing_start = /; printing object (.+)/i
     const re_printing_stop = /; stop printing object (.+)/i
-    let re_object_start
-    if (re_exclude_object_start.test(gcode_str)) {
-      re_object_start = re_exclude_object_start
-    } else {
-      re_object_start = re_printing_start
+    const re_z_offset = /SET_GCODE_OFFSET\s+Z_ADJUST=([0-9\-,.]+)\s+MOVE=1/i
+
+
+    if ([...gcode_str.matchAll(new RegExp(re_z_offset, "g"))].length > 0) {
+        scan_mode.val = SCAN_MODES.EXISTING_OFFSETS
+    } else if ([...gcode_str.matchAll(new RegExp(re_exclude_object_start, "g"))].length > 0) {
+        scan_mode.val = SCAN_MODES.EXCLUDE_OBJECT
+    } else if ([...gcode_str.matchAll(new RegExp(re_printing_start, "g"))].length > 0) {
+        scan_mode.val = SCAN_MODES.PRINTING_START
+    }
+    console.log("scan mode:", scan_mode.val)
+
+    let extract_from_file = (mode, re_pattern) => {
+        return (file_str) => {
+            let extracted = []
+            for (let [idx, line] of file_str.split("\n").entries()) {
+                const match = line.match(re_pattern)
+                if (match){
+                    const name = (mode===SCAN_MODES.EXISTING_OFFSETS)?`Line.${idx+1}`:match[1]
+                    if (![...extracted.map((o=>o.name))].includes(name))
+                        extracted.push({
+                            name: name,
+                            line_no: idx
+                        })
+                }
+            }
+            return extracted
+        }
     }
 
-    for (let [idx, line] of gcode_str.split("\n").entries()) {
-        const match = line.match(re_object_start)
-        if (match){
-          if (![...objects.val.map((o=>o.name))].includes(match[1]))
-            objects.val.push({name: match[1], line_no: idx})
+    if (scan_mode.val === SCAN_MODES.EXISTING_OFFSETS) {
+        existing_z_offsets.val = extract_from_file(scan_mode.val, re_z_offset)(gcode_str)
+    } else {
+        let re_pattern
+        if (scan_mode.val === SCAN_MODES.PRINTING_START) {
+            objects.val = extract_from_file(scan_mode.val, re_printing_start)(gcode_str)
+        } else if ((scan_mode.val === SCAN_MODES.EXCLUDE_OBJECT)) {
+            objects.val = extract_from_file(scan_mode.val, re_exclude_object_start)(gcode_str)
         }
-    } 
-    console.log(objects)
+    }
   }
 
-  const scroll_to_line = (line_no) => {
+  const scroll_to_line = (idx, line_no) => {
     const ta = one("textarea#gcode-file-contents")
     const line_height = ta.scrollHeight / ta.value.split("\n").length
-    console.log(ta, line_height, line_no, line_height * line_no)
-    ta.scrollTop = line_height * line_no
+    ta.scrollTop = line_height * (idx+line_no)
   }
 
   van.derive(()=>{
-    console.log("new content")
+    const lines = gcode_in.val.split("\n")
+    const initial_offset = z_offset_settings.initial.val
+    const increment_offset = z_offset_settings.increment.val
+
     scan_gcode(gcode_in.val)
+
+    let new_offsets = []
+    if (scan_mode.val === SCAN_MODES.EXISTING_OFFSETS) {
+        existing_z_offsets.val.forEach((o, idx)=>{
+            new_offsets.push({
+                offset_str: idx===0?
+                    `;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SET_GCODE_OFFSET Z_ADJUST=${initial_offset} MOVE=1  ; total z-offset: ${initial_offset}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;`
+                    :`;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SET_GCODE_OFFSET Z_ADJUST=${increment_offset} MOVE=1  ; total z-offset: ${(1000*initial_offset+1000*idx*increment_offset)/1000}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;`,
+                line_no: o.line_no
+            })
+        })
+    } else {
+        objects.val.forEach((o, idx)=>{
+            new_offsets.push({
+                offset_str: idx===0?
+                    `;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SET_GCODE_OFFSET Z_ADJUST=${initial_offset} MOVE=1  ; total z-offset: ${initial_offset}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;`
+                    :`;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SET_GCODE_OFFSET Z_ADJUST=${increment_offset} MOVE=1  ; total z-offset: ${(1000*initial_offset+1000*idx*increment_offset)/1000}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;`,
+                line_no: o.line_no
+            })
+        })
+    }
+
+    for (let [idx, {offset_str, line_no}] of new_offsets.toReversed().entries()) {
+        if (scan_mode.val === SCAN_MODES.EXISTING_OFFSETS) {
+            lines.splice(line_no, 1, offset_str)
+        } else {
+            lines.splice(line_no+1, 0, offset_str)
+        }
+    }
+
+    gcode_out.val = lines.join("\n")
   })
 
   const import_from_gcode_file = (file) => {
@@ -155,7 +322,6 @@
 
   van.derive(()=>{
     import_from_gcode_file(gcode_file_input.val[0])
-    console.log(objects.val)
   })
 
 
@@ -170,20 +336,50 @@
     textarea(
         // TODO: Use this instead of textarea https://stackoverflow.com/a/41309213
         {
-          style: "margin: 1rem; width: 100%",
+          style: "margin: 1rem; width: 100%; font-family: monospace;",
           id: "gcode-file-contents",
             rows: 10,
-            value: van.derive(()=>gcode_in.val),
+            value: van.derive(()=>gcode_out.val),
             oninput: (e)=>gcode_in.val = e.target.value
         },
     )
   )
 
+  const save_gcode_as_file = () => {
+    const blob = new Blob([gcode_in.val], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const filename = gcode_file_input.val[0] ? gcode_file_input.val[0].name : "sample.gcode"
+    const filename_parts = filename.match(/(.+)(\.gcode.*)/)
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename_parts[1]}—${z_offset_settings.initial.val}Δ${z_offset_settings.increment.val}${filename_parts[2]}`;
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+  }
+
+document.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape") {
+        show_help.val = false
+    }
+})
+
   van.add(
     document.body,
     dialog(
       {
-        open: van.derive(()=>show_help.val)
+        open: van.derive(()=>show_help.val),
+        onclick: (e) => {
+            if (e.target === e.currentTarget) {
+            show_help.val = false
+            }
+        },
       },
       article(
         header(
@@ -191,28 +387,27 @@
             onclick: ()=>show_help.val = false,
             "aria-label": "Close",rel: "prev"
           }),
-          h1("Instructions"),
+          h1("About"),
         ),
+        p("This tool helps to dial in z-offset by modifying your gcode to test a number of z-offset values at once.  Print several 1-layer objects and this tool will help you insert z-offset adjustments right before those objects are printed."),
+        h2("Instructions"),
         ol(
           li("In your slicer, add a cube primative that's 0.2mm thick"),
           li("Clone the cube 8 times (you should have 9 total)"),
-          li("Rename your cubes 'Cube A' through 'Cube I'"),
-          li("Arrange your cubes so that they're organized on the build plate in an order that you will remember"),
-          li("Make sure your plate is set to per-object print order rather than per-layer"),
-          li("Drag your cubes into alphabetic order in the object list"),
+          li("Give each of your cubes unique names"),
+          li("Make note of the print order of each of your objects"),
           li("Scrub through through the slice preview and verify that your cubes will print in the order that you expect"),
-          li("Export your sliced objects as gcode"),
-          li("Import your gcode here"),
+          li("Export your sliced plate as gcode"),
+          li("Import your gcode here (runs locally, not uploaded anywhere)"),
           li("Set your initial Z-Offset and increment and verify that the correct offsets will be inserted into your gcode"),
           li("Save your modified gcode and print it"),
-          li("Determine which sample had the desired amount of squish and then modify your printer config to incorporate that relative z-offset")
+          li("Determine which sample had the desired amount of squish and then modify your printer config to incorporate that z-offset relative to how it is currently configured")
         )
       )
     )
   )
 
   // TODO: Clean up into components
-  // TODO: Insert z-offset commands: SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1
   // TODO: Styling
 
 
